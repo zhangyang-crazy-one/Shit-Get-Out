@@ -1,0 +1,37 @@
+# Runtime and local state
+.sgo/
+.planning/
+
+# Generated Claude entrypoints and optional local skills
+.claude/agents/
+.claude/commands/
+.claude/skills/
+
+# Local assistant configs
+.claude/settings.local.json
+
+# Only keep SGO Codex assets under version control
+.codex/agents/*
+!.codex/agents/sgo-*.toml
+.codex/skills/*
+!.codex/skills/sgo-*/
+!.codex/skills/sgo-*/SKILL.md
+.codex/minimax-video-creator/
+.codex/minimax-video-creator.zip
+.codex/notebooklm-workflow/
+.codex/obsidian/
+
+# Local generated or throwaway assets
+resources/
+videos/
+assets/
+*.zip
+
+# Python / Node caches
+__pycache__/
+*.pyc
+node_modules/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db

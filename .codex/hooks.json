@@ -1,0 +1,100 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "ROOT=\"$(git rev-parse --show-toplevel 2>/dev/null || pwd)\"; node \"$ROOT/.codex/sgo/hooks/codex-hook-adapter.js\" session-start",
+            "statusMessage": "SGO loading writing session"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "ROOT=\"$(git rev-parse --show-toplevel 2>/dev/null || pwd)\"; node \"$ROOT/.codex/sgo/hooks/codex-hook-adapter.js\" research-entry",
+            "statusMessage": "SGO research gate"
+          },
+          {
+            "type": "command",
+            "command": "ROOT=\"$(git rev-parse --show-toplevel 2>/dev/null || pwd)\"; node \"$ROOT/.codex/sgo/hooks/codex-hook-adapter.js\" design-entry",
+            "statusMessage": "SGO design gate"
+          },
+          {
+            "type": "command",
+            "command": "ROOT=\"$(git rev-parse --show-toplevel 2>/dev/null || pwd)\"; node \"$ROOT/.codex/sgo/hooks/codex-hook-adapter.js\" constitution-entry",
+            "statusMessage": "SGO constitution gate"
+          },
+          {
+            "type": "command",
+            "command": "ROOT=\"$(git rev-parse --show-toplevel 2>/dev/null || pwd)\"; node \"$ROOT/.codex/sgo/hooks/codex-hook-adapter.js\" outline-entry",
+            "statusMessage": "SGO outline gate"
+          },
+          {
+            "type": "command",
+            "command": "ROOT=\"$(git rev-parse --show-toplevel 2>/dev/null || pwd)\"; node \"$ROOT/.codex/sgo/hooks/codex-hook-adapter.js\" validation-entry",
+            "statusMessage": "SGO validation gate"
+          },
+          {
+            "type": "command",
+            "command": "ROOT=\"$(git rev-parse --show-toplevel 2>/dev/null || pwd)\"; node \"$ROOT/.codex/sgo/hooks/codex-hook-adapter.js\" writing-entry",
+            "statusMessage": "SGO writing gate"
+          },
+          {
+            "type": "command",
+            "command": "ROOT=\"$(git rev-parse --show-toplevel 2>/dev/null || pwd)\"; node \"$ROOT/.codex/sgo/hooks/codex-hook-adapter.js\" finalize-entry",
+            "statusMessage": "SGO finalize gate"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "ROOT=\"$(git rev-parse --show-toplevel 2>/dev/null || pwd)\"; node \"$ROOT/.codex/sgo/hooks/codex-hook-adapter.js\" research-exit",
+            "statusMessage": "SGO research review"
+          },
+          {
+            "type": "command",
+            "command": "ROOT=\"$(git rev-parse --show-toplevel 2>/dev/null || pwd)\"; node \"$ROOT/.codex/sgo/hooks/codex-hook-adapter.js\" design-exit",
+            "statusMessage": "SGO design review"
+          },
+          {
+            "type": "command",
+            "command": "ROOT=\"$(git rev-parse --show-toplevel 2>/dev/null || pwd)\"; node \"$ROOT/.codex/sgo/hooks/codex-hook-adapter.js\" constitution-exit",
+            "statusMessage": "SGO constitution review"
+          },
+          {
+            "type": "command",
+            "command": "ROOT=\"$(git rev-parse --show-toplevel 2>/dev/null || pwd)\"; node \"$ROOT/.codex/sgo/hooks/codex-hook-adapter.js\" outline-exit",
+            "statusMessage": "SGO outline review"
+          },
+          {
+            "type": "command",
+            "command": "ROOT=\"$(git rev-parse --show-toplevel 2>/dev/null || pwd)\"; node \"$ROOT/.codex/sgo/hooks/codex-hook-adapter.js\" validation-exit",
+            "statusMessage": "SGO validation review"
+          },
+          {
+            "type": "command",
+            "command": "ROOT=\"$(git rev-parse --show-toplevel 2>/dev/null || pwd)\"; node \"$ROOT/.codex/sgo/hooks/codex-hook-adapter.js\" writing-exit",
+            "statusMessage": "SGO writing review"
+          },
+          {
+            "type": "command",
+            "command": "ROOT=\"$(git rev-parse --show-toplevel 2>/dev/null || pwd)\"; node \"$ROOT/.codex/sgo/hooks/codex-hook-adapter.js\" finalize-exit",
+            "statusMessage": "SGO finalize review"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,57 @@
+---
+name: sgo-status
+description: 查看 SGO 写作项目的当前状态、进度和质量概览。
+model: haiku
+allowed-tools:
+  - Read
+  - Glob
+---
+
+# SGO 状态查看
+
+显示当前 SGO 写作项目的完整状态。
+
+## 执行步骤
+
+1. **读取 STATE.md**：读取 `.sgo/STATE.md` 获取项目状态
+2. **检查断点文件**：检查 `.sgo/.continue-here.md` 是否存在，如果存在显示断点信息
+3. **扫描伏笔状态**：读取 `.sgo/tracking/foreshadow-ledger.md` 统计活跃伏笔数
+4. **汇总目录内容**：扫描 `.sgo/` 各子目录，统计已有制品数量
+5. **格式化输出**：以清晰格式显示以下信息：
+   - 项目信息（写作类型、输出规模、目标字数）
+   - 当前阶段和阶段状态
+   - 写作进度（Unicode 进度条）
+   - 质量概览（评分、合规率）
+   - 活跃伏笔数
+   - 断点恢复提示（如果存在 .continue-here.md）
+
+## 前置条件
+
+- `.sgo/STATE.md` 必须存在（项目已初始化）
+
+## 输出格式
+
+```
+=== SGO 写作项目状态 ===
+类型: [写作类型]  规模: [输出规模]  目标: [N字]
+当前阶段: [阶段名] ([阶段状态])
+进度: [███░░░░░░░] 30%
+质量评分: 85/100  宪法合规: 100%
+活跃伏笔: 5
+[断点恢复提示]
+```
+
+## 进度条生成规则
+
+进度条由 10 个字符组成，显示当前完成百分比：
+- `█` (filled block) 表示已完成部分
+- `░` (empty block) 表示未完成部分
+- 进度百分比显示在进度条右侧
+
+计算方式：根据 `.sgo/STATE.md` 中的 `progress.percent` 字段计算填充块数量。
+
+## Codex Adapter Notes
+
+- Treat `$ARGUMENTS` / `$1` as the text after the `$sgo-*` skill invocation.
+- When this workflow says to spawn an SGO Agent, use Codex `spawn_agent(agent_type="sgo-...")` if subagents are explicitly available in the current environment; otherwise execute the same agent instructions directly.
+- Keep all writing artifacts in `.sgo/`; `.codex/sgo/` only stores reusable framework files.
