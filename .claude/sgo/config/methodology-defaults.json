@@ -1,0 +1,112 @@
+{
+  "schema_version": 1,
+  "runtime_contract": "sgo-methodology-profile-v1",
+  "methodology_profile": {
+    "planning_mode": {
+      "document_structure": "tree_capable",
+      "expansion_mode": "scoped_tree",
+      "max_tree_depth": 4,
+      "node_types": [
+        "root",
+        "act",
+        "sequence",
+        "chapter",
+        "scene",
+        "section"
+      ],
+      "atomic_blocks": [
+        "opening_image",
+        "conflict_turn",
+        "evidence_or_detail",
+        "character_choice",
+        "foreshadow_plant",
+        "foreshadow_collect",
+        "reflection_or_theme"
+      ]
+    },
+    "source_of_truth_spec_workflow": {
+      "phases": [
+        "specify",
+        "plan",
+        "implement",
+        "verify"
+      ],
+      "spec_is_living_document": true
+    },
+    "human_oversight_checkpoints": {
+      "loop_mode": "over_the_loop",
+      "boundaries": {
+        "always_do": [
+          "先读取现有 .sgo 制品，再生成新内容",
+          "在调研、立宪、验证阶段显式引用上游制品或配置依据"
+        ],
+        "ask_first": [
+          "推翻已锁定宪法的核心主题或结构前先征求人工确认",
+          "将高不确定推断提升为硬性事实前先征求人工确认"
+        ],
+        "never_do": [
+          "在无依据时把推测写成确定事实",
+          "静默忽略已存在制品中的硬约束"
+        ]
+      }
+    },
+    "revision_critic_loops": {
+      "dynamic_rubric": true,
+      "diagnosis_action_rewrite": true
+    },
+    "minimum_viable_context": {
+      "enabled": true,
+      "enforcement": "soft_warning",
+      "required_slots": [
+        "topic_defined",
+        "genre_identified",
+        "source_basis_present"
+      ],
+      "min_sources": 1
+    },
+    "memory_strategy": {
+      "sensory_context": "recent_local_context",
+      "short_term_memory": "artifact_chain",
+      "long_term_memory": {
+        "artifact_mode": "local_files",
+        "primary_artifact": ".sgo/memory/long-term-memory.md",
+        "story_facts_memory": [
+          "character_state",
+          "timeline_state",
+          "foreshadow_status",
+          "unresolved_questions",
+          "worldview_constraints"
+        ],
+        "writing_preferences_memory": [
+          "user_preferences",
+          "banned_expressions",
+          "style_drift_warnings",
+          "recurring_failure_modes"
+        ]
+      }
+    },
+    "authorship_control_strategy": {
+      "role_clarity": [
+        "human_architect",
+        "human_editor",
+        "ai_drafter"
+      ],
+      "artifact_mode": "dedicated_authorship_file",
+      "artifact_path": ".sgo/authorship/control.md",
+      "severe_drift_escalation": "ask_first",
+      "style_disruptor": {
+        "enabled": false
+      }
+    },
+    "academic_evidence_policy": {
+      "enabled": false,
+      "citation_expectation": "type_specific",
+      "allowed_claim_postures": [
+        "supported",
+        "inconclusive"
+      ],
+      "dual_granularity": [],
+      "conflict_handling": "surface_as_warning"
+    }
+  }
+}

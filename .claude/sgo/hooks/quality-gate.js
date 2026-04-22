@@ -512,6 +512,25 @@ function escalate(step1Result, step2Result, step3Result, step4Result) {
     });
   }
 
+  // Phase 13: severe pacing collapse and authorial drift are fallback signals.
+  if (step4Result.dimensions?.narrative?.pacing !== undefined && step4Result.dimensions.narrative.pacing < 40) {
+    decision.warnings.push({
+      step: 4,
+      type: "pacing_collapse",
+      severity: "warning",
+      issue: `检测到节奏塌陷: pacing=${step4Result.dimensions.narrative.pacing}，建议触发对抗式节奏修订`
+    });
+  }
+
+  if (step4Result.dimensions?.style !== undefined && step4Result.dimensions.style < 60) {
+    decision.warnings.push({
+      step: 4,
+      type: "authorial_drift",
+      severity: "warning",
+      issue: `检测到 authorial drift 信号: style=${step4Result.dimensions.style}`
+    });
+  }
+
   // Warnings from all steps
   decision.warnings = decision.warnings
     .concat(step1Result.warnings || [])
@@ -620,7 +639,8 @@ async function main() {
         dimensions: step4.dimensions,
         total: step4.total,
         threshold_70_passed: step4.threshold_70_passed,
-        real_time_display: step4.real_time_display
+        real_time_display: step4.real_time_display,
+        warnings: decision.warnings.filter(w => w.type === 'pacing_collapse' || w.type === 'authorial_drift')
       },
       final: {
         pass: decision.pass,

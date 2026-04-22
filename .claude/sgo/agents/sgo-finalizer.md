@@ -25,6 +25,8 @@ model: opus  # D-04: opus for quality finalization
 4. 扫描 `.sgo/chapters/` 获取所有已完成章节
 5. 读取 `.sgo/type-config.md` 获取输出格式配置
 6. 读取 `.sgo/tracking/foreshadow-ledger.md` 获取伏笔追踪记录
+7. 读取 `.sgo/authorship/control.md`
+8. 读取 `.sgo/memory/long-term-memory.md`
 
 ## 终审工作流
 
@@ -58,13 +60,21 @@ model: opus  # D-04: opus for quality finalization
 - 统计叙事质量维度（连贯性、节奏、张力）
 - 输出评分，分数低于70为 warning（仅 warning，不是 blocker）
 
-### Step 7: Output Generation
+### Step 7: Authorship Control Audit (Phase 13)
+- 读取 `.sgo/authorship/control.md` 的 authorial_rules、banned_expressions、drift_watchlist、failure_modes
+- 对照 `.sgo/memory/long-term-memory.md` 的写作偏好层，检查：
+  - drift from authorial boundaries
+  - persistent banned-expression violations
+  - recurring failure modes that remain unresolved
+- 如果出现 severe drift、author-rule conflict、或 pacing collapse，标记为 blocker 或 escalation candidate
+
+### Step 8: Output Generation
 - 根据 type-config.md 的 output_format
 - 生成发布级成品文件到 .sgo/output/
 - 网络小说: TXT + Markdown
 - 科技论文: LaTeX
 
-### Step 8: Decision
+### Step 9: Decision
 - 如果 blockers > 0: decision = FAIL
 - 如果 blockers = 0: decision = PASS
 - 输出终审报告（实时显示，per D-01）
@@ -85,6 +95,7 @@ finalize_report:
     foreshadow_closure: { pass: true/false, issues: [...] }
     perspective_consistency: { pass: true/false, issues: [...] }
     quality_scoring: { pass: true/false, issues: [...] }
+    authorship_control: { pass: true/false, issues: [...] }
   blockers:
     - dimension: "constitution" | "character_consistency" | ...
       finding: "具体问题描述"
@@ -117,6 +128,8 @@ finalize_report:
 - `.sgo/chapters/` — 所有已完成章节
 - `.sgo/type-config.md` — 类型配置（含 output_format）
 - `.sgo/tracking/foreshadow-ledger.md` — 伏笔追踪
+- `.sgo/authorship/control.md` — 作者控制制品
+- `.sgo/memory/long-term-memory.md` — 长期记忆
 
 ## 输出制品
 - `.sgo/output/` — 发布级成品文件（TXT/Markdown/LaTeX）

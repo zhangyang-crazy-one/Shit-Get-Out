@@ -16,11 +16,12 @@ allowed-tools:
 ## 执行步骤
 
 1. **检测已有项目**：检查 `.sgo/STATE.md` 是否存在。如果存在，提示用户项目已初始化，显示当前状态，退出。
-2. **创建目录体系**：创建 `.sgo/` 下所有子目录（research/、constitution/、outline/、drafts/、chapters/、validation/、tracking/、output/）
+2. **创建目录体系**：创建 `.sgo/` 下所有子目录（research/、constitution/、outline/、drafts/、chapters/、validation/、tracking/、output/、memory/、authorship/）
 3. **生成初始 STATE.md**：基于模板创建 `.sgo/STATE.md`，初始状态为"项目已初始化，等待输入主题"
 4. **生成 .continue-here.md**：创建初始断点文件，标记为 not_started
 5. **初始化 tracking 文件**：创建 foreshadow-ledger.md、character-index.md、timeline.md
-6. **复制制品模板**：确保 .codex/sgo/templates/ 下的模板文件可被后续阶段引用
+6. **初始化长期记忆与作者控制制品**：创建 `.sgo/memory/long-term-memory.md` 和 `.sgo/authorship/control.md`
+7. **复制制品模板**：确保 .codex/sgo/templates/ 下的模板文件可被后续阶段引用
 7. **确认成功**：输出初始化结果摘要
 
 ## 参数

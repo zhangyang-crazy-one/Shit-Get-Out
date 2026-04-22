@@ -46,6 +46,14 @@ Spawn `sgo-writer` Agent，传递以下上下文：
 
 Agent 将自动执行：
 - 上下文组装（宪法 + 大纲 + 已完成章节 + 类型配置）
+- 按 `write_target` 选择 atomic blocks
+- 加载 parent chain 和 `block_dependencies`
+- 将 atomic blocks 转化为正常 prose output，不输出 block headings
+- 读取 `.sgo/memory/long-term-memory.md` 和 `.sgo/authorship/control.md`
+- 如果 `genre=tech-paper`，读取 `claim_label`、`evidence_refs`、`citation_required`、`source_conflicts`
+- 如果 `genre=tech-paper`，按 `claim_label` 调整写作姿态，并输出 citation placeholders / unsupported_claims 自检项
+- 在写作过程中应用对抗式节奏，优先处理过直推进、过早满足、冲突不足、揭示过早
+- 仅在严重文风漂移、作者规则冲突或节奏塌陷时进入人工确认边界
 - 风格锚定（参考已完成章节的文风）
 - 情感弧线落地
 - 叙事冲突生成

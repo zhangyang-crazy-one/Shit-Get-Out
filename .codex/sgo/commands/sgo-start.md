@@ -62,19 +62,22 @@ allowed-tools:
 用户确认后执行：
 1. 读取类型配置文件 `.codex/sgo/config/{type-slug}.md`
 2. 从配置中提取 scale_defaults 确认目标字数
-3. 更新 `.sgo/STATE.md`（先 Read 整个文件，修改后 Write，保留已有字段）：
+3. 执行 `node .codex/sgo/scripts/methodology-profile.js resolve --genre {type-slug} --project-root .` 生成 `.sgo/methodology/profile.resolved.json`
+4. 更新 `.sgo/STATE.md`（先 Read 整个文件，修改后 Write，保留已有字段）：
    - 写作类型: {display_name}
    - 输出规模: {scale}
    - 目标字数: {word_count}
    - 当前阶段: research
    - 阶段状态: in_progress
-4. 更新 `.sgo/.continue-here.md` 状态为 research 阶段
+5. 更新 `.sgo/.continue-here.md` 状态为 research 阶段
 
 ### 第四步：执行自动调研
 
 使用 sgo-researcher Agent 执行背景调研：
 - 在 Codex subagent prompt 中传递：主题描述、识别的类型 slug、判定的规模
 - Agent 将读取类型配置的 research_strategy 字段决定调研行为
+- Agent 必须读取 `.sgo/methodology/profile.resolved.json` 识别 governance 边界与 minimum viable context 软警告
+- 如果 `genre=tech-paper`，Agent 还必须产出 `evidence_map`、`claim_inventory`、`source_conflicts`
 - Agent 优先使用本地 SearXNG 实例（127.0.0.1:8080）执行多引擎聚合搜索
 - 如果 SearXNG 不可用，Agent 尝试自动安装 SearXNG Docker 容器
 - 安装失败或用户拒绝时，降级为纯 Codex 知识模式
@@ -92,7 +95,7 @@ allowed-tools:
 
 1. 使用 sgo-constitutioner Agent 生成创作宪法：
    - 在 Codex subagent prompt 中传递：调研报告路径、类型 slug、规模信息
-   - Agent 将读取类型配置的 constitution_defaults 和调研报告，自动生成铁律/指南/禁忌
+   - Agent 将读取类型配置的 constitution_defaults、`.sgo/methodology/profile.resolved.json` 和调研报告，自动生成铁律/指南/禁忌
    - 宪法写入 `.sgo/constitution/constitution.md`，状态直接锁定（status: locked）
 2. 宪法生成完成后更新 `.sgo/STATE.md`（先 Read 整个文件，修改后 Write，保留已有字段）：
    - 阶段状态: completed
@@ -109,6 +112,9 @@ allowed-tools:
 2. 使用 sgo-outliner Agent 生成大纲：
    - Agent 读取宪法（iron_rules）和调研报告
    - Agent 读取类型配置的 scale_defaults 判断结构类型
+   - Agent 读取 `.sgo/methodology/profile.resolved.json` 获取 planning_mode
+   - 如果 `genre=tech-paper`，Agent 还必须把 `claim_inventory` / `evidence_map` 映射成带 `claim_label`、`evidence_refs` 的 academic atomic blocks
+   - Agent 将 `tree_structure` 和 `atomic_block_plan` 写入 `.sgo/outline/outline.md`
    - Agent 输出到 `.sgo/outline/outline.md`，状态设为 draft
 
 3. 大纲生成完成后，outline-exit hook 验证并锁定大纲
@@ -124,6 +130,7 @@ ITERATION_LOOP:
      - 检查伏笔完整性（plant 有但无 collect 则标记为 blocker）
      - 检查角色设计一致性（有问题则标记为 warning）
      - 检查情感弧线（缺失则标记为 warning）
+     - 如果 `genre=tech-paper`，额外检查 claim labels、evidence refs、citation placeholders 和 source conflicts
   
   2. 如果 VALIDATION_PASSED（无 blocker）:
      - 更新 STATE.md: 阶段状态: completed
@@ -158,12 +165,14 @@ Validation 通过后进入写作阶段：
   - 当前阶段: writing
   - 阶段状态: in_progress
 - writing-entry hook 验证大纲已锁定后方可开始写作
+- 如果 `genre=tech-paper`，后续写作按 evidence map、claim inventory、claim label 和 citation placeholders 约束落稿
 - 继续 Phase 5 写作工作流
 
 ## 强制约束
 
 - **用户确认前不得开始调研**（D-07）
 - 调研报告必须写入 `.sgo/research/report.md`
+- 方法论配置必须先解析到 `.sgo/methodology/profile.resolved.json`，再启动 researcher/constitutioner/validator
 - STATE.md 更新必须先 Read 再 Write，保留已有字段值（避免写入竞争，RESEARCH.md 陷阱 5）
 - 类型识别结果必须与 `.codex/sgo/config/` 下的配置文件 slug 一致
 - **立宪阶段无需人工确认**（D-04）：调研完成后自动进入立宪，用户在第二步的确认覆盖整个流程

@@ -83,10 +83,55 @@ SGO writes and reads these shared artifacts:
 - `.sgo/chapters/`
 - `.sgo/validation/`
 - `.sgo/tracking/`
+- `.sgo/memory/`
+- `.sgo/authorship/`
 - `.sgo/output/`
 - `.sgo/STATE.md`
 
 That means you can start in Claude, continue in Codex, and keep the same project state.
+
+## Methodology Layer
+
+SGO now has a first-class `methodology_profile` layer for workflow governance.
+
+This is intentionally separate from genre fields like `research_strategy`, `writing_flow`, and `quality_rules`.
+Those fields describe genre behavior. `methodology_profile` describes process behavior:
+
+- human oversight boundaries: `always_do / ask_first / never_do`
+- minimum viable context checks
+- evidence posture for academic writing
+- revision and workflow discipline
+
+Global defaults live in `.claude/sgo/config/methodology-defaults.json` and are mirrored to `.codex/sgo/config/methodology-defaults.json`.
+Genre-specific overrides can extend that baseline. The resolved project-level result is written into `.sgo/methodology/profile.resolved.json`, which is consumed by both Claude and Codex runtimes.
+
+Phase 10 keeps this scoped to governance and read-chain integration. Tree planning, claim-label evidence validation, and richer memory/runtime behavior are deliberately deferred to later phases.
+
+## Tree Planning
+
+SGO supports tree-document planning through the resolved `methodology_profile.planning_mode`.
+
+The canonical outline remains `.sgo/outline/outline.md`, but it can now carry:
+
+- `tree_structure` for parent-child document nodes
+- `atomic_block_plan` for scene/section-local writing blocks
+- `block_dependencies` for block-level ordering
+
+Atomic blocks are planning and context-selection units. They help the writer load scoped local context before drafting, but the final output remains normal prose unless a type-specific template says otherwise.
+
+## Academic Evidence Workflow
+
+For `tech-paper`, SGO uses the resolved `academic_evidence_policy` to track evidence maps, claim inventory, claim labels, evidence references, and source conflicts. Unsupported factual claims are treated as blockers; partial support and unresolved conflicts remain visible as warnings or discussion material.
+
+## Memory And Authorship Runtime
+
+Phase 13 extends SGO's writing runtime with explicit long-term memory and authorship-control surfaces. The shared `.sgo/` project model can now host:
+
+- factual long-term memory for character state, timeline, foreshadow status, unresolved questions, and worldview constraints
+- writing-preference memory for banned expressions, style drift warnings, and recurring failure modes
+- a dedicated authorship-control artifact, separate from `constitution.md` and `STATE.md`
+
+Adversarial pacing is intended to act during drafting, while severe drift or pacing collapse is reserved for explicit escalation paths.
 
 ## Codex Notes
 

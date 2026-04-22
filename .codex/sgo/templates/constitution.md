@@ -7,6 +7,8 @@ locked_at: null                 # 锁定时间（null = 未锁定，ISO-8601）
 # === 类型信息 ===
 genre: ""                       # 写作类型（网络小说/短篇/言情/科幻/侦探/论文等）
 genre_config_ref: ""            # 类型配置文件路径
+methodology_profile_ref: ""     # 已决议 methodology profile 路径
+governance_warnings: []         # ask_first / minimum context 等治理警告
 
 # === 铁律层（不可违反） ===
 iron_rules: []

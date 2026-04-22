@@ -6,6 +6,7 @@
 // D-03 Pattern: Chapter summary chain for cross-session continuation
 // D-04 Pattern: Trigger quality-gate on chapter completion
 // D-05 Pattern: Compression trigger every 5 chapters
+// Phase 13 Pattern: Persist long-term memory and authorship-related signals
 
 const fs = require('fs');
 const path = require('path');
@@ -83,6 +84,7 @@ process.stdin.on('end', async () => {
     // 质量门控通过后，生成章节摘要并更新 STATE.md
     if (qualityResult.pass || qualityResult.warnings_only) {
       updateStateWithChapterSummary(stateFile, filePath, chapterContent, qualityResult);
+      updateLongTermMemory(cwd, filePath, chapterContent, qualityResult);
     }
 
     // ====== Layer 5.5: Persist batch quality results (D-03 key-link) ======
@@ -197,6 +199,79 @@ async function triggerQualityGate(chapterFile, cwd) {
       resolve({ pass: true, warnings_only: false, blockers: [], warnings: [] });
     });
   });
+}
+
+// ====== Helper: Update Phase 13 long-term memory artifact ======
+function updateLongTermMemory(cwd, chapterFile, chapterContent, qualityResult) {
+  try {
+    const memoryRelativePath = '.sgo/memory/long-term-memory.md';
+    const memoryFile = path.join(cwd, memoryRelativePath);
+    if (!fs.existsSync(memoryFile)) return;
+
+    let memoryContent = fs.readFileSync(memoryFile, 'utf8');
+
+    const chapterNumMatch = chapterContent.match(/chapter_number:\s*(\d+)/);
+    const chapterId = chapterNumMatch ? `ch-${chapterNumMatch[1]}` : path.basename(chapterFile, '.md');
+
+    const titleMatch = chapterContent.match(/^title:\s*(.+)$/m);
+    const title = titleMatch ? titleMatch[1].trim() : 'Untitled';
+
+    const fsPlantedMatch = chapterContent.match(/foreshadow_planted:\s*\n([\s\S]*?)(?=\n\w|\n---)/);
+    const fsPlanted = fsPlantedMatch
+      ? fsPlantedMatch[1].match(/-\s*(\S+)/g)?.map(m => m.replace(/^\-\s*/, '').trim()) || []
+      : [];
+
+    const fsCollectedMatch = chapterContent.match(/foreshadow_collected:\s*\n([\s\S]*?)(?=\n\w|\n---)/);
+    const fsCollected = fsCollectedMatch
+      ? fsCollectedMatch[1].match(/-\s*(\S+)/g)?.map(m => m.replace(/^\-\s*/, '').trim()) || []
+      : [];
+
+    const storyFactEntry = `
+  - chapter_id: "${chapterId}"
+    title: "${title}"
+    facts:
+      - "foreshadow_planted:${fsPlanted.join(',') || 'none'}"
+      - "foreshadow_collected:${fsCollected.join(',') || 'none'}"
+    updated_at: "${new Date().toISOString()}"`;
+
+    const preferenceSignals = [];
+    if ((qualityResult.warnings || []).length > 0) {
+      preferenceSignals.push(...qualityResult.warnings.map(w => w.type || 'warning'));
+    }
+    if ((qualityResult.blockers || []).length > 0) {
+      preferenceSignals.push(...qualityResult.blockers.map(b => b.type || 'blocker'));
+    }
+
+    const preferenceEntry = `
+  - chapter_id: "${chapterId}"
+    signals: [${preferenceSignals.map(s => `"${s}"`).join(', ')}]
+    updated_at: "${new Date().toISOString()}"`;
+
+    memoryContent = replaceOrAppendYamlArray(memoryContent, 'story_facts_memory', storyFactEntry, chapterId);
+    memoryContent = replaceOrAppendYamlArray(memoryContent, 'writing_preferences_memory', preferenceEntry, chapterId);
+    memoryContent = memoryContent.replace(/last_chapter_synced:\s*.*/g, `last_chapter_synced: "${chapterId}"`);
+    memoryContent = memoryContent.replace(/updated_at:\s*.*/g, `updated_at: "${new Date().toISOString()}"`);
+
+    fs.writeFileSync(memoryFile, memoryContent);
+  } catch (e) {
+    console.error('Error updating long-term memory:', e.message);
+  }
+}
+
+function replaceOrAppendYamlArray(content, fieldName, entry, chapterId) {
+  const pattern = new RegExp(`(${fieldName}:\\s*\\n)([\\s\\S]*?)(?=\\n\\w|\\n---|$)`);
+  const match = content.match(pattern);
+  if (!match) return content;
+
+  const existing = match[2];
+  const entryPattern = new RegExp(`- chapter_id:\\s*"${chapterId}"[\\s\\S]*?(?=\\n\\s*- chapter_id:|$)`);
+  let next = existing;
+  if (entryPattern.test(existing)) {
+    next = existing.replace(entryPattern, entry.trimStart());
+  } else {
+    next = existing + entry + '\n';
+  }
+  return content.replace(pattern, `$1${next}`);
 }
 
 // ====== Helper: Update STATE.md with chapter summary ======

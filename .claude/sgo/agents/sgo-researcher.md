@@ -23,13 +23,18 @@ model: sonnet
 ## 强制前置
 1. 读取 `.sgo/STATE.md` 了解当前项目状态（确认类型、规模、主题）
 2. 读取类型配置文件 `.claude/sgo/config/{genre-slug}.md`
-3. 从配置中提取 `research_strategy` 字段作为调研指导
-4. 读取 `.claude/sgo/templates/research-report.md` 确认报告结构模板
-5. 检查 `.sgo/research/` 下是否已有调研材料
+3. 读取 `.sgo/methodology/profile.resolved.json` 获取治理边界、minimum viable context 和 evidence policy
+4. 从配置中提取 `research_strategy` 字段作为调研指导
+5. 读取 `.claude/sgo/templates/research-report.md` 确认报告结构模板
+6. 检查 `.sgo/research/` 下是否已有调研材料
 
 ## 调研工作流
 
 ### 阶段 1：类型策略理解
+- 先读取 methodology profile 的 `human_oversight_checkpoints.boundaries`，确认哪些事项必须始终执行、哪些只能警告、哪些绝不能做
+- 检查 `minimum_viable_context`：
+  - 若 `.sgo/methodology/profile.resolved.json` 中存在 `governance_warnings`，必须将其写入报告 frontmatter 的 `governance_warnings`
+  - 若 `minimum_viable_context_check.status=warn`，必须设置 `minimum_context_warning: true`
 - 读取类型配置的 `research_strategy.focus_areas`，明确调研重点
 - 读取类型配置的 Markdown body（核心惯例、禁忌清单），理解类型要求
 - 根据 `research_strategy.web_search_enabled` 决定是否执行 Web 搜索
@@ -95,12 +100,49 @@ curl -s "http://127.0.0.1:8080/search?q=${QUERY}&format=json&count=15"
 - 对有价值的搜索结果使用 WebFetch 深入阅读
 - 结合 Claude 自身知识补充背景框架
 - 搜索获得的素材应在报告中标注来源
+- 若 genre 为 `tech-paper` 且 methodology 的 `academic_evidence_policy.enabled=true`：
+  - 必须读取 `academic_evidence_policy.claim_label_policy`
+  - 必须读取 `academic_evidence_policy.evidence_map_schema`
+  - 优先收集论文、标准、综述等可引用来源
+  - 区分“来源支持的主张”和“暂时推断”
+  - 对来源冲突保留痕迹，不允许静默丢弃
+
+### 阶段 2.5：学术证据地图与 Claim Inventory (Phase 12)
+
+当 `genre=tech-paper` 且 `academic_evidence_policy.enabled=true` 时，调研输出必须额外生成 `evidence_map`、`claim_inventory` 和 `source_conflicts`：
+
+- `evidence_map` 每项必须包含：
+  - `evidence_id`
+  - `source_ref`
+  - `granularity`
+  - `summary`
+  - `supports`
+  - `limits`
+  - `confidence`
+- `claim_inventory` 每项必须包含：
+  - `claim_id`
+  - `claim_type`
+  - `claim_label`
+  - `evidence_refs`
+  - `source_conflicts`
+  - `citation_required`
+  - `writing_posture`
+- `claim_label` 只能使用 `claim_label_policy.labels` 中定义的标签
+- 对没有足够来源支持的主张，不得标成 `supported`；必须改为 `unsupported` 或 `inconclusive`
+- `source_conflicts` 必须显式记录冲突来源、冲突点以及为何保留
 
 ### 阶段 3：素材整理与报告生成
 - 按固定结构组织调研成果
 - 写入 `.sgo/research/report.md`（基于 `.claude/sgo/templates/research-report.md` 模板结构）
 - 确保 YAML frontmatter 元数据完整
 - 报告 status 字段设为 "completed"
+- frontmatter 必须写入：
+  - `methodology_profile_ref: ".sgo/methodology/profile.resolved.json"`
+  - `minimum_context_warning`
+  - `governance_warnings`
+  - `evidence_map`
+  - `claim_inventory`
+  - `source_conflicts`
 
 ## 调研报告结构
 
@@ -126,6 +168,7 @@ curl -s "http://127.0.0.1:8080/search?q=${QUERY}&format=json&count=15"
 - `.sgo/STATE.md` -- 当前项目状态（类型、规模、主题）
 - `.claude/sgo/config/{genre-slug}.md` -- 类型配置文件
 - `.claude/sgo/templates/research-report.md` -- 报告结构模板
+- `.sgo/methodology/profile.resolved.json` -- 已决议 methodology profile
 - `.sgo/research/` -- 已有调研材料（如有）
 
 ## 输出制品

@@ -6,6 +6,42 @@ total_chapters: 0               # 总章数（短篇为0，使用场景编号）
 target_word_count: 0            # 目标总字数
 status: draft                   # draft | locked
 genre_config_ref: null          # 类型配置引用（如 ".claude/sgo/config/short-story.md"）
+planning_mode_ref: ".sgo/methodology/profile.resolved.json"
+
+# === 树形文档结构 (Phase 11) ===
+tree_structure:
+  mode: "linear_compatible"        # tree_document | linear_compatible
+  root_id: "root"
+  max_depth: 4
+  nodes: []
+# tree_structure.nodes 每项含:
+#   - node_id: "act-1"
+#   - parent_id: "root"
+#   - node_type: root | act | sequence | chapter | scene | section
+#   - title: 节点标题
+#   - purpose: 节点承担的叙事/论证功能
+#   - children: ["scene-1", "scene-2"]
+#   - local_context_refs: ["research:背景知识", "constitution:IR-001"]
+
+# === 原子块规划 (Phase 11) ===
+atomic_block_plan: []
+# 每项含:
+#   - block_id: "blk-scene-1-opening-image"
+#   - parent_id: "scene-1"
+#   - block_type: opening_image | conflict_turn | evidence_or_detail | character_choice | foreshadow_plant | foreshadow_collect | reflection_or_theme | claim_block | evidence_block | limitation_block | conclusion_block
+#   - purpose: 该块在局部写作中的功能
+#   - write_target: "scene-1"      # 对应章节/场景/小节
+#   - depends_on: []
+#   - local_context_refs: ["constitution:IR-001", "research:创作素材"]
+#   - acceptance_checks: ["包含可见动作或细节", "不直接解释主题"]
+#   - claim_id: "claim-001"        # 学术写作可选：绑定 claim inventory 项
+#   - claim_label: "supported"     # 学术写作可选：supported | supported_by_paper | partially_supported | in_conflict | inconclusive | unsupported
+#   - evidence_refs: ["evid-001"]  # 学术写作可选：引用的 evidence_map 条目
+#   - citation_required: true      # 学术写作可选：该块是否必须落 citation placeholder
+#   - source_conflicts: ["src-001 vs src-004"]  # 学术写作可选：冲突来源引用
+#   - conflict_notes: "说明冲突如何保留和处理"
+#   - verification_status: "pending"  # 学术写作可选：pending | checked | blocked
+block_dependencies: {}
 
 # === 结构信息 (D-01) ===
 # 根据 scale_defaults.volumes_enabled 条件选择结构类型

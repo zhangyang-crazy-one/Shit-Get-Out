@@ -22,8 +22,11 @@ model: sonnet
 2. 读取 `.sgo/constitution/constitution.md` 获取创作宪法
 3. 读取 `.sgo/outline/outline.md` 获取故事大纲
 4. 确认验证阶段的前置条件已满足
-5. 读取 `.claude/sgo/config/{genre}.md` 获取类型配置的 quality_rules（用于动态规则组装）
-6. 从 quality_rules 中提取 consistency_checks 数组和 scoring_weights 对象
+5. 读取 `.sgo/methodology/profile.resolved.json` 获取治理边界、minimum viable context、academic_evidence_policy
+6. 读取 `.claude/sgo/config/{genre}.md` 获取类型配置的 quality_rules（用于动态规则组装）
+7. 从 quality_rules 中提取 consistency_checks 数组和 scoring_weights 对象
+8. 读取 `.sgo/memory/long-term-memory.md`
+9. 读取 `.sgo/authorship/control.md`
 
 ## 验证维度
 
@@ -57,6 +60,19 @@ model: sonnet
 5. 使用 `scoring_weights` 计算质量评分，而非固定权重
 
 **Anti-pattern:** Do NOT add if/case branches for specific types. Use the declaration pattern - read config, parse array, dynamically assemble.
+
+### Methodology Governance Loading (Phase 10)
+
+在动态规则组装前，必须读取 `.sgo/methodology/profile.resolved.json`：
+
+1. 检查 `minimum_viable_context_check`
+   - 若状态为 `warn`，输出 `severity: warning` 的治理问题，而非 blocker
+2. 读取 `human_oversight_checkpoints.boundaries`
+   - 对触发 `ask_first` 的情况输出治理警告
+   - 对违反 `never_do` 的情况输出 blocker 或明确失败原因
+3. 若 `genre=tech-paper` 且 `academic_evidence_policy.enabled=true`
+   - 在验证摘要中反映 evidence policy
+   - 将 evidence policy 作为 claim-level 验证的 source of truth
 
 ### 1. Constitution Iron Rules 检查 (VALD-01)
 - 解析 constitution.md 中的铁律层（`## 铁律层` 标题后的内容）
@@ -238,11 +254,72 @@ quality_score:
   threshold_70_passed: true
 ```
 
+### 11. Claim Label Evidence Validation (EVID-05, Phase 12)
+
+当满足以下条件时，必须执行 claim-label 证据验证：
+- `genre=tech-paper`
+- `academic_evidence_policy.enabled=true`
+
+验证步骤：
+1. 从 `.sgo/methodology/profile.resolved.json` 读取 `academic_evidence_policy.claim_label_policy.labels`
+2. 验证 `.sgo/research/report.md` 中的 `claim_inventory` 和 `evidence_map`
+3. 验证 `.sgo/outline/outline.md` 中学术相关的 `atomic_block_plan` 条目
+4. 应用以下规则：
+   - `supported` 或 `supported_by_paper` 的 claim 若 `evidence_refs` 为空，记为 `severity: blocker`
+   - `unsupported` 的 factual claim 若出现在 conclusion/result 类 block，记为 `severity: blocker`
+   - 存在 `source_conflicts` 但缺少 `conflict_notes`，记为 `severity: warning`
+   - `citation_required=true` 但缺少 citation placeholder，记为 `severity: warning`
+
+输出 schema 必须包含：
+
+```yaml
+claim_label_validation:
+  checked: true
+  policy_ref: ".sgo/methodology/profile.resolved.json"
+  unsupported_claims: []
+  missing_evidence_refs: []
+  unresolved_conflicts: []
+  citation_warnings: []
+```
+
+### 12. Memory / Authorship Drift Validation (Phase 13)
+
+当存在 `.sgo/memory/long-term-memory.md` 和 `.sgo/authorship/control.md` 时，必须执行 Phase 13 运行时检查：
+
+1. 读取长期记忆中的：
+   - `story_facts_memory`
+   - `writing_preferences_memory`
+2. 读取作者控制制品中的：
+   - `authorial_rules`
+   - `banned_expressions`
+   - `drift_watchlist`
+   - `failure_modes`
+   - `style_disruptor_enabled`
+3. 区分三类结果：
+   - 普通 warning：轻度风格偏移、轻度节奏问题
+   - severe authorial drift：明显偏离作者边界
+   - author-rule conflict：直接违反作者规则或命中禁用表达
+   - pacing collapse：节奏塌陷到需要人工确认的程度
+4. 只有 severe authorial drift、author-rule conflict、或 pacing collapse 才允许 ask-first / 人工确认边界
+5. routine warnings 不得中断主流程，只能进入 warnings / governance_warnings
+
+输出中应包含：
+
+```yaml
+authorship_validation:
+  checked: true
+  severe_drift: []
+  rule_conflicts: []
+  pacing_collapse: []
+  routine_warnings: []
+```
+
 ## 输入制品
 - `.sgo/STATE.md` — 当前项目状态
 - `.sgo/constitution/constitution.md` — 创作宪法（用于铁律检查）
 - `.sgo/outline/outline.md` — 故事大纲（用于 OUTL 和 QUAL-01/03）
 - `.sgo/chapters/chapter-N.md` — 待验证章节（用于 QUAL-01）
+- `.sgo/methodology/profile.resolved.json` — 已决议 methodology profile
 
 ## 输出格式
 
@@ -258,6 +335,7 @@ issues:
 iteration: 1  # 或 2, 3 用于修订循环
 passed: true | false
 summary: "验证摘要（字数、问题数等）"
+governance_warnings: []
 quality_score:
   total: {value}
   narrative:
@@ -270,6 +348,19 @@ perspective_check:
   actual: {type}
   consistent: true|false
   violations: []
+claim_label_validation:
+  checked: true|false
+  policy_ref: ".sgo/methodology/profile.resolved.json"
+  unsupported_claims: []
+  missing_evidence_refs: []
+  unresolved_conflicts: []
+  citation_warnings: []
+authorship_validation:
+  checked: true|false
+  severe_drift: []
+  rule_conflicts: []
+  pacing_collapse: []
+  routine_warnings: []
 ```
 
 ## 修订循环支持 (VALD-02)

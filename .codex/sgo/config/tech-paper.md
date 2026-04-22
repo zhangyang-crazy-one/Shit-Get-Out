@@ -3,6 +3,7 @@ name: tech-paper
 display_name: 科技论文
 slug: tech-paper
 description: "论证严谨、引用完整的学术规范写作，注重研究方法和结论可靠性"
+methodology_profile_ref: ".codex/sgo/config/methodology-overrides/tech-paper.json"
 
 scale_defaults:
   default_scale: 短篇

@@ -25,8 +25,9 @@ model: sonnet
 1. 读取 `.sgo/STATE.md` — 了解当前项目状态和进度
 2. 读取 `.sgo/constitution/constitution.md` — 获取创作宪法（铁律、指南、禁忌）
 3. 读取 `.sgo/research/report.md` — 获取调研报告（背景知识、创作素材、类型特征）
-4. 从 constitution.genre_config_ref 读取类型配置 — 如 `.claude/sgo/config/short-story.md` 或 `.claude/sgo/config/web-novel.md`
-5. 读取 `.claude/sgo/templates/outline.md` — 获取大纲模板结构
+4. 读取 `.sgo/methodology/profile.resolved.json` 获取 methodology_profile.planning_mode
+5. 从 constitution.genre_config_ref 读取类型配置 — 如 `.claude/sgo/config/short-story.md` 或 `.claude/sgo/config/web-novel.md`
+6. 读取 `.claude/sgo/templates/outline.md` — 获取大纲模板结构
 
 ## 构架工作流
 
@@ -49,6 +50,53 @@ model: sonnet
     → 角色设计使用完整格式（含 personality, appearance, arc_summary, relationships）
     → 情感弧线节点数：5-8个
 ```
+
+### 阶段1.5：树形规划模式检测
+
+读取 `.sgo/methodology/profile.resolved.json` 中的 `methodology_profile.planning_mode`，并在生成大纲前确定 tree/atomic planning 策略：
+
+1. 读取 `methodology_profile.planning_mode.document_structure`
+2. 读取 `methodology_profile.planning_mode.expansion_mode`
+3. 读取 `methodology_profile.planning_mode.atomic_blocks`
+4. 如果 `document_structure` 是 `tree_capable` 或 `tree_document`，设置 `tree_structure.mode = "tree_document"`
+5. 如果 `document_structure` 是 `imrad_linear`，设置 `tree_structure.mode = "linear_compatible"`
+6. 如果 `atomic_blocks` 为空，使用默认 taxonomy：`opening_image`, `conflict_turn`, `evidence_or_detail`, `character_choice`, `foreshadow_plant`, `foreshadow_collect`, `reflection_or_theme`
+
+生成 `tree_structure.nodes` 时，每个节点必须包含：
+- `node_id`
+- `parent_id`
+- `node_type`
+- `title`
+- `purpose`
+- `children`
+- `local_context_refs`
+
+生成 `atomic_block_plan` 时，每个 block 必须包含：
+- `block_id`
+- `parent_id`
+- `block_type`
+- `purpose`
+- `write_target`
+- `depends_on`
+- `local_context_refs`
+- `acceptance_checks`
+
+### 阶段1.6：学术 Claim/Evidence 块规划 (Phase 12)
+
+当 `genre=tech-paper` 时，必须从 `.sgo/research/report.md` 读取 `claim_inventory` 和 `evidence_map`，并把这些学术证据制品映射到 `atomic_block_plan`：
+
+1. 根据论证需要创建 `claim_block`、`evidence_block`、`limitation_block` 或 `conclusion_block`
+2. 每个学术 claim block 必须携带：
+   - `claim_id`
+   - `claim_label`
+   - `evidence_refs`
+   - `citation_required`
+   - `verification_status`
+3. 如果该主张存在 `source_conflicts`，相关 block 必须同时包含：
+   - `source_conflicts`
+   - `conflict_notes`
+4. 不允许 `claim_label=supported` 或 `supported_by_paper` 的 `claim_block` 为空 `evidence_refs`
+5. `unsupported` 或 `inconclusive` 的主张必须流向 `limitation_block` 或讨论性 block，不能直接当作最终结论
 
 ### 阶段2：内容生成
 
@@ -113,11 +161,15 @@ model: sonnet
    - target_word_count: 从 scale_defaults 提取
    - status: draft
    - genre_config_ref: 指向使用的类型配置
+   - planning_mode_ref: ".sgo/methodology/profile.resolved.json"
    - writing_flow: 从类型配置读取
      - pov_default: 类型默认叙事视角
      - pacing_pattern: 类型节奏模式
      - chapter_hook: 是否需要章节钩子
    - structure_type: "场景段列表" | "卷/章两级"
+   - tree_structure: 包含 mode、root_id、max_depth、nodes
+   - atomic_block_plan: 原子块规划数组
+   - block_dependencies: 原子块依赖图
    - act_breakdown: 对应的幕次划分
    - foreshadow_plan: 完整的伏笔网络数组
    - characters: 角色定义数组
@@ -144,6 +196,7 @@ model: sonnet
 - `.sgo/STATE.md` — 当前项目状态
 - `.sgo/constitution/constitution.md` — 创作宪法（含 genre_config_ref）
 - `.sgo/research/report.md` — 调研报告
+- `.sgo/methodology/profile.resolved.json` — 已决议 methodology profile（含 planning_mode）
 - 类型配置文件（如 `.claude/sgo/config/short-story.md`）— 由 constitution.genre_config_ref 指定
 - `.claude/sgo/templates/outline.md` — 大纲模板
 

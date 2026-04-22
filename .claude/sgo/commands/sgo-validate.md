@@ -35,6 +35,7 @@ model: inherit
 2. 读取 `.sgo/outline/outline.md` — 故事大纲（如验证大纲）
 3. 读取 `.sgo/chapters/` 下的最新章节（如验证章节）
 4. 读取类型配置 `.claude/sgo/config/{genre}.md` 获取 `quality_rules`
+5. 读取 `.sgo/methodology/profile.resolved.json` 获取 minimum viable context 与 academic_evidence_policy
 
 ### 第三步：执行验证
 
@@ -88,5 +89,6 @@ Warning: [N]个
 ## 强制约束
 
 - 验证必须基于类型配置的 `quality_rules.consistency_checks` 动态组装检查项（声明式模式，不硬编码类型分支）
+- 验证必须显式区分 blocker 与 methodology governance warning
 - 3 次迭代上限不可突破（VALD-03）
 - STATE.md 更新必须先 Read 再 Write，保留已有字段值

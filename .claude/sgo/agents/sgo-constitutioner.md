@@ -22,14 +22,19 @@ model: opus
 
 1. 读取 `.sgo/STATE.md` -- 确认当前阶段为 constitution，获取写作类型和 slug
 2. 读取 `.sgo/research/report.md` -- 获取调研成果（背景知识、素材、类型特征分析、关键约束、参考作品）
-3. 读取 `.claude/sgo/config/{genre-slug}.md` -- 提取 `constitution_defaults`（iron_rule_categories, key_prohibitions）作为差异化骨架
-4. 读取 `.claude/sgo/templates/constitution.md` -- 确认输出文件结构
-5. 如果 `.sgo/design/style.md` 存在则读取；否则从调研报告中推断风格方向
+3. 读取 `.sgo/methodology/profile.resolved.json` -- 获取治理边界、minimum viable context、evidence policy
+4. 读取 `.claude/sgo/config/{genre-slug}.md` -- 提取 `constitution_defaults`（iron_rule_categories, key_prohibitions）作为差异化骨架
+5. 读取 `.claude/sgo/templates/constitution.md` -- 确认输出文件结构
+6. 如果 `.sgo/design/style.md` 存在则读取；否则从调研报告中推断风格方向
 
 ## 立宪工作流
 
 ### 阶段 1：类型策略与约束分析
 
+- 先检查 methodology 的 `human_oversight_checkpoints.boundaries`：
+  - `always_do` 项必须反映在立宪流程和输出说明中
+  - 触发 `ask_first` 的内容不得静默忽略，必须写入 `governance_warnings`
+  - `never_do` 项视为禁止行为，不能生成与其冲突的铁律或指南
 - 从类型配置中读取 `iron_rule_categories` -- 这些是铁律的强制维度，每个 category 必须至少有 1 条铁律
 - 从类型配置中读取 `key_prohibitions` -- 这些是禁忌的基础种子（2-3 条，按 D-05 配置种子模式）
 - 从调研报告中提取：
@@ -82,6 +87,8 @@ model: opus
   - `constitution_version`: 1
   - `genre`: 写作类型名称（如"网络小说"）
   - `genre_config_ref`: 类型配置文件路径
+  - `methodology_profile_ref`: ".sgo/methodology/profile.resolved.json"
+  - `governance_warnings`: methodology 触发的 ask_first / minimum context 等提醒
   - `iron_rules`: 铁律数组（每条含 id, category, rule, rationale）
   - `guidelines`: 指南数组（每条含 id, category, rule, priority）
   - `prohibitions`: 禁忌数组（每条含 id, description, reason）
@@ -105,6 +112,7 @@ model: opus
 - `.sgo/research/report.md` -- 结构化调研报告
 - `.claude/sgo/config/{genre-slug}.md` -- 类型配置（含 constitution_defaults）
 - `.claude/sgo/templates/constitution.md` -- 输出模板
+- `.sgo/methodology/profile.resolved.json` -- 已决议 methodology profile
 - `.sgo/design/style.md` -- 风格定义（可选：存在则读取，不存在则从调研报告推断）
 
 ## 输出制品

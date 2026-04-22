@@ -1,0 +1,91 @@
+{
+  "methodology_profile": {
+    "planning_mode": {
+      "document_structure": "imrad_linear",
+      "expansion_mode": "section_scoped",
+      "max_tree_depth": 3,
+      "node_types": [
+        "paper",
+        "section",
+        "subsection",
+        "claim_block"
+      ],
+      "atomic_blocks": [
+        "research_question",
+        "method_step",
+        "evidence_block",
+        "claim_block",
+        "limitation_block",
+        "conclusion_block"
+      ]
+    },
+    "human_oversight_checkpoints": {
+      "boundaries": {
+        "always_do": [
+          "在论文写作中优先读取已有文献、调研报告和术语约束",
+          "区分已有工作、方法、结果和推测性讨论"
+        ],
+        "ask_first": [
+          "当需要改写研究问题、方法结论或主要贡献声明时先征求人工确认"
+        ],
+        "never_do": [
+          "把没有引用支撑的结论包装成确定事实",
+          "删除与当前结论冲突的来源而不显式说明"
+        ]
+      }
+    },
+    "minimum_viable_context": {
+      "required_slots": [
+        "topic_defined",
+        "genre_identified",
+        "research_report_present",
+        "source_basis_present",
+        "method_or_problem_statement"
+      ],
+      "min_sources": 3
+    },
+    "academic_evidence_policy": {
+      "enabled": true,
+      "citation_expectation": "paper_or_standards_backed",
+      "allowed_claim_postures": [
+        "supported",
+        "supported_by_paper",
+        "partially_supported",
+        "in_conflict",
+        "inconclusive"
+      ],
+      "claim_label_policy": {
+        "labels": [
+          "supported",
+          "supported_by_paper",
+          "partially_supported",
+          "in_conflict",
+          "inconclusive",
+          "unsupported"
+        ],
+        "unsupported_factual_claim_severity": "blocker",
+        "conflict_without_note_severity": "warning",
+        "citation_missing_severity": "warning"
+      },
+      "dual_granularity": [
+        "atomic_facts",
+        "context_blocks"
+      ],
+      "evidence_map_schema": {
+        "required_granularities": [
+          "atomic_facts",
+          "context_blocks"
+        ],
+        "required_fields": [
+          "evidence_id",
+          "source_ref",
+          "summary",
+          "supports",
+          "limits",
+          "confidence"
+        ]
+      },
+      "conflict_handling": "surface_as_warning_and_keep_trace"
+    }
+  }
+}

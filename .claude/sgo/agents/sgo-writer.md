@@ -25,6 +25,9 @@ model: inherit
 3. 读取 `.sgo/outline/outline.md` 获取故事大纲和章节规划
 4. 读取当前章节的大纲段落
 5. 读取已完成章节（摘要链 + 最新章节全文）
+6. 读取 outline.md 的 tree_structure、atomic_block_plan、block_dependencies
+7. 读取 `.sgo/memory/long-term-memory.md`
+8. 读取 `.sgo/authorship/control.md`
 
 **Template Loading (per D-01 priority order):**
 
@@ -59,6 +62,8 @@ For example:
 3. Read latest `compression_snapshot` (if exists) for chapters 1-(N-3)
 4. Read current chapter outline from outline.md
 5. Read constitution iron rules
+6. Read long-term memory artifact
+7. Read authorship-control artifact
 
 **Context reading order:**
 ```
@@ -67,6 +72,8 @@ For example:
 3. Latest compression snapshot (if exists)
 4. Last 3 chapters (full content)
 5. Type config: .claude/sgo/config/{type}.md (writing_flow)
+6. .sgo/memory/long-term-memory.md
+7. .sgo/authorship/control.md
 ```
 
 ### 步骤 2: 章节选择 (Chapter Selection, per D-01)
@@ -80,6 +87,54 @@ For example:
 
 **For short stories:**
 - Only one piece to write - the entire story
+
+### 步骤 2.5: 原子块上下文选择 (Phase 11)
+
+在确定目标章节或场景后，使用 outline.md 的 `atomic_block_plan` 进行 scoped context selection：
+
+1. Identify the current `chapter_id` or `scene_id`
+2. Select all `atomic_block_plan` entries where `write_target` equals the current target
+3. Load each selected block's parent chain from `tree_structure.nodes`
+4. Load dependencies from `block_dependencies` and each block's `depends_on`
+5. Load only the matching `local_context_refs` from constitution/research/outline when possible
+6. Write final prose to normal `.sgo/drafts/chapter-N.md`; 不要将 block_id 暴露为最终用户可见标题，除非类型模板明确要求
+
+**Atomic block self-check:**
+- Each selected block has at least one prose realization
+- Every `acceptance_checks` item is either satisfied or listed in self-check warnings
+- No block is written before unmet `depends_on` blocks
+
+### 步骤 2.6: Claim Label 写作姿态控制 (Phase 12)
+
+当 `genre=tech-paper` 时，写作前必须读取所选 atomic blocks 的：
+- `claim_label`
+- `evidence_refs`
+- `citation_required`
+- `source_conflicts`
+
+按 `claim_label` 决定写作姿态：
+- `supported` / `supported_by_paper`：按有证据支撑的学术主张写作，并插入 citation placeholder
+- `partially_supported`：使用保守语气，明确适用范围和限制
+- `in_conflict`：写成文献冲突/讨论，不得包装成已定事实
+- `inconclusive`：写成假设、限制或未来工作
+- `unsupported`：不得写成事实陈述；必须删除、降级表达，或列入 `unsupported_claims`
+
+### 步骤 2.7: 长期记忆与作者控制读取 (Phase 13)
+
+在正式落稿前，必须读取：
+- `.sgo/memory/long-term-memory.md`
+- `.sgo/authorship/control.md`
+
+使用方式：
+- 从长期记忆的事实层提取：角色状态、时间线、伏笔状态、未解问题、世界观约束
+- 从长期记忆的写作偏好层提取：用户偏好、禁用表达、风格漂移警报、常见失败模式
+- 从作者控制制品提取：authorial_rules、banned_expressions、drift_watchlist、failure_modes、style_disruptor_enabled
+
+规则：
+- 不得让新章节与事实层记忆冲突，除非文本显式给出变化过程
+- 若命中 `banned_expressions`，必须改写
+- 若命中 `drift_watchlist` 或作者规则冲突，记录为高优先级自检项
+- `style_disruptor` 默认关闭；只有 `.sgo/authorship/control.md` 明确启用时才允许使用
 
 ### 步骤 3: 风格锚定 (Style Anchoring, per D-02)
 
@@ -119,6 +174,20 @@ Based on emotional_arc nodes:
 - Let conflict arise naturally from plot, not imposed
 - Conflict should advance emotional arc, not derail it
 
+### 步骤 5.5: 对抗式节奏控制 (Phase 13)
+
+对抗式节奏的主执行点在写作时，而不是写后返工。落稿时主动检查并对抗以下问题：
+- **过直推进**：信息和情节按最顺路径平推，没有阻力或反差
+- **过早满足**：冲突、情感、解释或答案过早兑现
+- **冲突不足**：角色选择没有代价，段落只是在解释而非承压
+- **揭示过早**：作者太早说清楚，削弱悬念和后劲
+
+处理方式：
+- 给关键推进增加阻力、反问、延迟满足或局部逆转
+- 避免一次性解释完所有原因
+- 在不破坏既定大纲的前提下，优先让读者“先感受，再确认”
+- 如果判断需要强扰动才能成立，先检查 `.sgo/authorship/control.md` 是否启用 `style_disruptor`
+
 ### 步骤 6: 章节写作
 
 **Structure (per D-01):**
@@ -156,14 +225,22 @@ Before outputting:
 3. Active characters listed in frontmatter
 4. Foreshadow planted/collected identified
 5. Constitution iron rules followed (self-check)
+6. `unsupported_claims: []`
+7. `citation_placeholders: []`
+8. `claim_label_warnings: []`
+9. `memory_conflicts: []`
+10. `authorship_warnings: []`
+11. `pacing_pressure_notes: []`
 
 If issues found: revise before output
 
 ## 输入制品
 - `.sgo/STATE.md` — 当前项目状态和写作进度
 - `.sgo/constitution/constitution.md` — 创作宪法（铁律不可违反）
-- `.sgo/outline/outline.md` — 故事大纲
+- `.sgo/outline/outline.md` — 故事大纲（含 tree_structure、atomic_block_plan、block_dependencies）
 - `.sgo/chapters/chapter-N.md` — 已完成章节（用于风格锚定）
+- `.sgo/memory/long-term-memory.md` — 长期记忆（事实层 + 写作偏好层）
+- `.sgo/authorship/control.md` — 作者控制制品
 - `.claude/sgo/config/{type}.md` — 类型配置（writing_flow）
 
 ## 输出制品
