@@ -6,8 +6,6 @@ SGO 是一个面向 AI Agent 的结构化写作工作流。
 
 这个项目明确借鉴了 `Get Shit Done` 的代码工作流思想，但 SGO 的目标不是通用软件交付，而是把同样的流程纪律应用到小说与长文本写作。
 
-English README: [README_EN.md](README_EN.md)
-
 ## 为什么做这个
 
 大多数 AI 写作会话都会漂移。
