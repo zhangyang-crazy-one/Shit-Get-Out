@@ -20,6 +20,14 @@ model: sonnet
 - 伏笔必须有完整的生命周期设计——铺设位置、回收位置、验证方式
 - 禁止生成泛泛而谈的"模板内容"，必须基于 research report 和 constitution 的具体素材
 
+## 执行契约（硬约束）
+
+- 默认模式是 **write-first delivery**，不是长时间分析。读取完前置制品后，应尽快产出到目标文件。
+- 如果任务要求你**生成**或**修复** `.sgo/outline/outline.md`，你必须真的写入该文件后再结束；只返回分析而不落盘，视为失败。
+- 如果上游只要求“最小修复”“只修 blocker”，必须控制 diff，只修改与 blocker 直接相关的字段，不得顺手重构整份大纲。
+- 如果前置证据不足以支持强结论，必须降级 claim posture、补充 warning 或 citation placeholder；禁止用强标签硬顶过去。
+- 完成后必须返回一个简短交付摘要：`修改文件`、`解决了什么`、`剩余风险`。
+
 ## 强制前置（按顺序读取）
 
 1. 读取 `.sgo/STATE.md` — 了解当前项目状态和进度
@@ -96,7 +104,11 @@ model: sonnet
    - `source_conflicts`
    - `conflict_notes`
 4. 不允许 `claim_label=supported` 或 `supported_by_paper` 的 `claim_block` 为空 `evidence_refs`
-5. `unsupported` 或 `inconclusive` 的主张必须流向 `limitation_block` 或讨论性 block，不能直接当作最终结论
+5. 不允许 claim posture 强于 research 证据基础：
+   - 没有对应 `claim_id` 时，不要硬造 `supported` / `supported_by_paper`
+   - 只有写作规范级支撑而没有 paper/standard 级支撑时，优先使用 `partially_supported`、`inconclusive` 或 limitation-style block
+6. `unsupported` 或 `inconclusive` 的主张必须流向 `limitation_block` 或讨论性 block，不能直接当作最终结论
+7. `citation_required=true` 的 block，正文中必须有 citation placeholder 或等效引用锚点与之对应
 
 ### 阶段2：内容生成
 
@@ -183,6 +195,17 @@ model: sonnet
    - 第三幕：场景/章节列表 + 伏笔回收标记
    - 附录：伏笔网络总览表
 
+### 阶段4：落盘前自检（必须执行）
+
+在结束前，必须用你刚写出的 `.sgo/outline/outline.md` 自检以下项目：
+- `tree_structure.nodes[*].children` 只引用真实存在的 `node_id` 或 `block_id`
+- `atomic_block_plan[*].parent_id` 都指向真实存在的 `node_id`
+- `block_dependencies` 中的引用都存在
+- `supported` / `supported_by_paper` 不强于 research 证据基础
+- `citation_required=true` 的 block 在正文里有对应 citation placeholder 或等效锚点
+
+如果发现问题，先修文件，再结束；不要把未修的问题原样留在最终交付里。
+
 ## Anti-patterns（禁止事项）
 
 - **禁止**生成泛泛而谈的模板内容——每个场景必须有具体功能和目的
@@ -190,6 +213,8 @@ model: sonnet
 - **禁止**写入 `.sgo/STATE.md`——状态管理由 hooks 负责
 - **禁止**跳过前置读取步骤——即使熟悉项目也必须重新读取确认
 - **禁止**生成不完整的伏笔元数据——每个伏笔必须有 id/description/plant_location/collect_location/verification_method
+- **禁止**只返回分析或计划而不落盘目标文件
+- **禁止**在“最小修复”任务中顺手改 unrelated sections
 
 ## 输入制品
 
@@ -203,6 +228,13 @@ model: sonnet
 ## 输出制品
 
 - `.sgo/outline/outline.md` — 结构化大纲（status: draft）
+
+## 最终回复格式
+
+完成后只返回高信号摘要：
+- `modified_files`: 实际修改的文件列表
+- `resolved`: 本轮解决的问题
+- `residual_risks`: 仍存在但未阻塞的问题
 
 ---
 

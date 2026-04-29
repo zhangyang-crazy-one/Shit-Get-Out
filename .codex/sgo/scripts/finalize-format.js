@@ -156,6 +156,15 @@ function stripFrontmatter(content) {
 }
 
 /**
+ * Read chapter title from frontmatter when available.
+ */
+function parseChapterTitle(content, fallbackFilename) {
+  const match = content.match(/^title:\s*"([^"]+)"$/m);
+  if (match) return match[1].trim();
+  return fallbackFilename.replace('.md', '').replace(/^chapter-\d+-?/, '');
+}
+
+/**
  * Sanitize filename for cross-platform compatibility
  */
 function sanitizeFilename(name) {
@@ -205,8 +214,10 @@ if (require.main === module) {
 
   const chapters = chapterFiles.map(filename => ({
     filename,
-    title: filename.replace('.md', '').replace(/^chapter-\d+-/, ''),
     content: fs.readFileSync(path.join(chaptersDir, filename), 'utf8')
+  })).map(chapter => ({
+    ...chapter,
+    title: parseChapterTitle(chapter.content, chapter.filename)
   }));
 
   console.log(`Formatting ${chapters.length} chapters as ${projectType}...`);

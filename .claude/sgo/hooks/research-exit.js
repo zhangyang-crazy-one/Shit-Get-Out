@@ -43,11 +43,12 @@ process.stdin.on('end', () => {
       const content = fs.readFileSync(reportFile, 'utf8');
       // 验证报告有实质内容（非空模板，至少 200 字符）
       if (content.length > 200) {
+        upsertResearchHandoffStatus(stateFile, 'awaiting_user_confirmation');
         const output = {
-          decision: "allow",
-          reason: "SGO: 调研报告已生成",
+          decision: "block",
+          reason: "SGO Research complete: 调研已完成。请先向用户汇报调研结论并询问是否进入立宪阶段；用户确认后，再继续后续流程。",
           hookSpecificOutput: {
-            additionalContext: "[SGO] 调研阶段完成，报告已写入 .sgo/research/report.md。立宪引擎可基于此报告生成创作宪法。"
+            additionalContext: "[SGO] 调研阶段完成，报告已写入 .sgo/research/report.md。\n下一步不要自动进入立宪：请先向用户汇报调研结论，并明确询问是否进入立宪阶段。\n用户确认后，请先将 `.sgo/STATE.md` 中 `research_handoff_status` 更新为 `confirmed`，再继续立宪。"
           }
         };
         process.stdout.write(JSON.stringify(output));
@@ -60,3 +61,20 @@ process.stdin.on('end', () => {
     process.exit(0);
   }
 });
+
+function upsertResearchHandoffStatus(stateFile, value) {
+  if (!fs.existsSync(stateFile)) return;
+
+  const stateContent = fs.readFileSync(stateFile, 'utf8');
+  let next = stateContent;
+
+  if (/^research_handoff_status:\s*/m.test(next)) {
+    next = next.replace(/^research_handoff_status:\s*.*/m, `research_handoff_status: ${value}`);
+  } else {
+    next = `${next.trimEnd()}\n\n## 阶段交接\n\nresearch_handoff_status: ${value}\n`;
+  }
+
+  if (next !== stateContent) {
+    fs.writeFileSync(stateFile, next);
+  }
+}

@@ -11,6 +11,21 @@
 const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
+const {
+  parseScalarField,
+  parseYamlListField,
+  replaceTopLevelField,
+  relativizeForState,
+} = require('./yaml-utils');
+
+function currentLocalDate() {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
+}
 
 let input = '';
 const stdinTimeout = setTimeout(() => process.exit(0), 10000);
@@ -213,18 +228,9 @@ function updateLongTermMemory(cwd, chapterFile, chapterContent, qualityResult) {
     const chapterNumMatch = chapterContent.match(/chapter_number:\s*(\d+)/);
     const chapterId = chapterNumMatch ? `ch-${chapterNumMatch[1]}` : path.basename(chapterFile, '.md');
 
-    const titleMatch = chapterContent.match(/^title:\s*(.+)$/m);
-    const title = titleMatch ? titleMatch[1].trim() : 'Untitled';
-
-    const fsPlantedMatch = chapterContent.match(/foreshadow_planted:\s*\n([\s\S]*?)(?=\n\w|\n---)/);
-    const fsPlanted = fsPlantedMatch
-      ? fsPlantedMatch[1].match(/-\s*(\S+)/g)?.map(m => m.replace(/^\-\s*/, '').trim()) || []
-      : [];
-
-    const fsCollectedMatch = chapterContent.match(/foreshadow_collected:\s*\n([\s\S]*?)(?=\n\w|\n---)/);
-    const fsCollected = fsCollectedMatch
-      ? fsCollectedMatch[1].match(/-\s*(\S+)/g)?.map(m => m.replace(/^\-\s*/, '').trim()) || []
-      : [];
+    const title = parseScalarField(chapterContent, 'title') || 'Untitled';
+    const fsPlanted = parseYamlListField(chapterContent, 'foreshadow_planted');
+    const fsCollected = parseYamlListField(chapterContent, 'foreshadow_collected');
 
     const storyFactEntry = `
   - chapter_id: "${chapterId}"
@@ -249,8 +255,8 @@ function updateLongTermMemory(cwd, chapterFile, chapterContent, qualityResult) {
 
     memoryContent = replaceOrAppendYamlArray(memoryContent, 'story_facts_memory', storyFactEntry, chapterId);
     memoryContent = replaceOrAppendYamlArray(memoryContent, 'writing_preferences_memory', preferenceEntry, chapterId);
-    memoryContent = memoryContent.replace(/last_chapter_synced:\s*.*/g, `last_chapter_synced: "${chapterId}"`);
-    memoryContent = memoryContent.replace(/updated_at:\s*.*/g, `updated_at: "${new Date().toISOString()}"`);
+    memoryContent = replaceTopLevelField(memoryContent, 'last_chapter_synced', `"${chapterId}"`);
+    memoryContent = replaceTopLevelField(memoryContent, 'updated_at', `"${new Date().toISOString()}"`);
 
     fs.writeFileSync(memoryFile, memoryContent);
   } catch (e) {
@@ -283,11 +289,10 @@ function updateStateWithChapterSummary(stateFile, chapterFile, chapterContent, q
 
     // 解析章节信息
     const chapterNumMatch = chapterContent.match(/chapter_number:\s*(\d+)/);
-    const titleMatch = chapterContent.match(/^title:\s*(.+)$/m);
     const wordCountMatch = chapterContent.match(/word_count:\s*(\d+)/);
 
     const chapterId = chapterNumMatch ? `ch-${chapterNumMatch[1]}` : 'unknown';
-    const title = titleMatch ? titleMatch[1].trim() : 'Untitled';
+    const title = parseScalarField(chapterContent, 'title') || 'Untitled';
     const wordCount = wordCountMatch ? parseInt(wordCountMatch[1]) : 0;
 
     // 生成摘要（取前两段，150-300字）
@@ -304,15 +309,8 @@ function updateStateWithChapterSummary(stateFile, chapterFile, chapterContent, q
     }
 
     // 解析 foreshadow_planted/collected
-    const fsPlantedMatch = chapterContent.match(/foreshadow_planted:\s*\n([\s\S]*?)(?=\n\w|\n---)/);
-    const fsPlanted = fsPlantedMatch
-      ? fsPlantedMatch[1].match(/-\s*(\S+)/g)?.map(m => m.replace(/^\-\s*/, '').trim()) || []
-      : [];
-
-    const fsCollectedMatch = chapterContent.match(/foreshadow_collected:\s*\n([\s\S]*?)(?=\n\w|\n---)/);
-    const fsCollected = fsCollectedMatch
-      ? fsCollectedMatch[1].match(/-\s*(\S+)/g)?.map(m => m.replace(/^\-\s*/, '').trim()) || []
-      : [];
+    const fsPlanted = parseYamlListField(chapterContent, 'foreshadow_planted');
+    const fsCollected = parseYamlListField(chapterContent, 'foreshadow_collected');
 
     // 创建章节摘要条目
     const chapterEntry = `
@@ -347,14 +345,37 @@ function updateStateWithChapterSummary(stateFile, chapterFile, chapterContent, q
       );
     }
 
-    // 更新 current_chapter
+    // 更新当前章节、输出文件和基础进度
     const currentChapterMatch = chapterContent.match(/chapter_number:\s*(\d+)/);
     if (currentChapterMatch) {
-      const nextChapter = parseInt(currentChapterMatch[1]) + 1;
+      const currentChapterNum = parseInt(currentChapterMatch[1]);
+      const nextChapterNum = currentChapterNum + 1;
+      const nextChapterId = `ch-${nextChapterNum}`;
+      const promotedPath = qualityResult.promoted_to
+        ? relativizeForState(stateFile, qualityResult.promoted_to)
+        : relativizeForState(stateFile, chapterFile);
+
+      stateContent = stateContent.replace(/- 当前章节:\s*.*/m, `- 当前章节: ${nextChapterId}`);
       stateContent = stateContent.replace(
-        /current_chapter:\s*\d+/,
-        `current_chapter: ${nextChapter}`
+        /(### 写作阶段 \(Writing\)[\s\S]*?- 输出文件:\s*).*/m,
+        `$1\`${promotedPath}\``
       );
+      stateContent = stateContent.replace(
+        /(### 写作阶段 \(Writing\)[\s\S]*?- 字数:\s*)\d+/m,
+        `$1${wordCount}`
+      );
+      stateContent = stateContent.replace(/上次活动:\s*.*/m, `上次活动: ${currentLocalDate()}`);
+
+      const totalMatch = stateContent.match(/- 总章节数:\s*(\d+)/);
+      const totalChapters = totalMatch ? parseInt(totalMatch[1]) : 0;
+      const completedCount = (stateContent.match(/chapter_id:/g) || []).length;
+      if (totalChapters > 0) {
+        const progress = Math.min(100, Math.round((completedCount / totalChapters) * 100));
+        stateContent = stateContent.replace(/- 已完成章节:\s*\d+/m, `- 已完成章节: ${completedCount}`);
+        stateContent = stateContent.replace(/- 整体进度:\s*\d+%/m, `- 整体进度: ${progress}%`);
+      }
+
+      updateContinueHere(path.dirname(stateFile), nextChapterId);
     }
 
     // 写入更新后的 STATE.md
@@ -363,6 +384,21 @@ function updateStateWithChapterSummary(stateFile, chapterFile, chapterContent, q
   } catch (e) {
     console.error('Error updating STATE.md:', e.message);
     // Non-blocking - continue
+  }
+}
+
+function updateContinueHere(sgoDir, nextChapterId) {
+  try {
+    const continueFile = path.join(sgoDir, '.continue-here.md');
+    if (!fs.existsSync(continueFile)) return;
+
+    let content = fs.readFileSync(continueFile, 'utf8');
+    content = content.replace(/^current_chapter:\s*.*$/m, `current_chapter: ${nextChapterId}`);
+    content = content.replace(/\*\*更新时间:\*\*\s*.*/m, `**更新时间:** ${currentLocalDate()}`);
+    content = content.replace(/\*\*下一阶段:\*\*\s*.*/m, `**下一阶段:** 继续完成 ${nextChapterId}`);
+    fs.writeFileSync(continueFile, content);
+  } catch (e) {
+    console.error('Error updating .continue-here.md:', e.message);
   }
 }
 
@@ -544,20 +580,12 @@ function buildSessionSummary(filePath, stateFile, wordCount, chapterContent) {
   try {
     // Parse chapter info
     const chapterNumMatch = chapterContent.match(/chapter_number:\s*(\d+)/);
-    const titleMatch = chapterContent.match(/^title:\s*(.+)$/m);
     const chapterId = chapterNumMatch ? `ch-${chapterNumMatch[1]}` : 'unknown';
-    const title = titleMatch ? titleMatch[1].trim() : 'Untitled';
+    const title = parseScalarField(chapterContent, 'title') || 'Untitled';
 
     // Parse foreshadow changes
-    const fsPlantedMatch = chapterContent.match(/foreshadow_planted:\s*\n([\s\S]*?)(?=\n\w|\n---)/);
-    const fsPlanted = fsPlantedMatch
-      ? fsPlantedMatch[1].match(/-\s*(\S+)/g)?.map(m => m.replace(/^\-\s*/, '').trim()) || []
-      : [];
-
-    const fsCollectedMatch = chapterContent.match(/foreshadow_collected:\s*\n([\s\S]*?)(?=\n\w|\n---)/);
-    const fsCollected = fsCollectedMatch
-      ? fsCollectedMatch[1].match(/-\s*(\S+)/g)?.map(m => m.replace(/^\-\s*/, '').trim()) || []
-      : [];
+    const fsPlanted = parseYamlListField(chapterContent, 'foreshadow_planted');
+    const fsCollected = parseYamlListField(chapterContent, 'foreshadow_collected');
 
     // Calculate total chapters from state
     let totalChapters = 0;

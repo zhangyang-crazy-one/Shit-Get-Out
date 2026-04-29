@@ -15,6 +15,12 @@ model: haiku
 
 ## 执行步骤
 
+在 Codex 中执行本命令时，默认动作应为：
+
+1. 运行 `node .codex/sgo/scripts/doctor-check.js`
+2. 若用户显式要求机器可读结果，再运行 `node .codex/sgo/scripts/doctor-check.js --json`
+3. 将结果整理成简洁状态报告返回给用户
+4. 若存在失败项，优先列失败项与修复建议
 ### 第一步：检查基础结构
 
 验证 `.sgo/` 目录体系完整性：
@@ -58,18 +64,18 @@ model: haiku
 
 ### 第三步：检查 Agent 定义
 
-验证 `.codex/agents/` 下的 SGO Agent 文件：
+验证 `.codex/agents/` 下的 SGO Agent 文件（当前仓库为 `.toml`）：
 
 | Agent | 检查项 |
 |-------|--------|
-| sgo-researcher.md | 文件存在、有 frontmatter、有 tools 字段 |
-| sgo-designer.md | 文件存在、有 frontmatter |
-| sgo-constitutioner.md | 文件存在、有 frontmatter |
-| sgo-outliner.md | 文件存在、有 frontmatter |
-| sgo-validator.md | 文件存在、有 frontmatter |
-| sgo-writer.md | 文件存在、有 frontmatter |
-| sgo-finalizer.md | 文件存在、有 frontmatter |
-| sgo-tracker.md | 文件存在、有 frontmatter |
+| sgo-researcher.toml | 文件存在 |
+| sgo-designer.toml | 文件存在 |
+| sgo-constitutioner.toml | 文件存在 |
+| sgo-outliner.toml | 文件存在 |
+| sgo-validator.toml | 文件存在 |
+| sgo-writer.toml | 文件存在 |
+| sgo-finalizer.toml | 文件存在 |
+| sgo-tracker.toml | 文件存在 |
 
 ### 第四步：检查 Commands 可发现性
 
@@ -77,6 +83,8 @@ model: haiku
 
 | Command | 检查项 |
 |---------|--------|
+| sgo-discuss.md | 符号链接有效、目标文件存在 |
+| sgo-fix.md | 符号链接有效、目标文件存在 |
 | sgo-init.md | 符号链接有效、目标文件存在 |
 | sgo-start.md | 符号链接有效、目标文件存在 |
 | sgo-status.md | 符号链接有效、目标文件存在 |
@@ -123,6 +131,22 @@ Hook 注册: [PASS/FAIL]
 - Hook 语法错误：检查对应 .js 文件
 - 符号链接失效：重新创建 `ln -sf ../sgo/commands$sgo-xxx.md .codex/skills$sgo-xxx.md`
 - 类型配置缺失：检查 `.codex/sgo/config/` 目录
+
+## 可执行检查
+
+除人工阅读外，可直接运行：
+
+```bash
+node .codex/sgo/scripts/doctor-check.js
+```
+
+若需要机器可读输出：
+
+```bash
+node .codex/sgo/scripts/doctor-check.js --json
+```
+
+脚本会覆盖结构、hooks、agents、commands、config 和 hooks.json 注册情况。
 
 ## Codex Adapter Notes
 

@@ -119,6 +119,17 @@ For example:
 - `inconclusive`：写成假设、限制或未来工作
 - `unsupported`：不得写成事实陈述；必须删除、降级表达，或列入 `unsupported_claims`
 
+### 步骤 2.65: Result Bundle 落盘（tech-paper only）
+
+当 `genre=tech-paper` 且当前 write target 包含结果表、参数敏感性表或明确的数值比较时：
+- 必须把正文中的结果表同步写成 `.sgo/output/` 下的结构化结果文件（优先 CSV，其次 JSON）
+- 必须在章节 frontmatter 中写出：
+  - `local_result_sources`
+  - `provenance_status`
+- 如果当前只有“稿件级权威数值”而没有逐次运行日志，可使用 `provenance_status: "versioned_result_bundle"`
+- 禁止把并不存在的原始实验日志伪装成 `raw_run_bundle`
+- 如果存在“优于 baseline”的数值差异叙述，结果包中必须能找到对应表格行，至少让 review 能回溯到本地文件
+
 ### 步骤 2.7: 长期记忆与作者控制读取 (Phase 13)
 
 在正式落稿前，必须读取：
@@ -231,6 +242,7 @@ Before outputting:
 9. `memory_conflicts: []`
 10. `authorship_warnings: []`
 11. `pacing_pressure_notes: []`
+12. 如果当前章节是 tech-paper 的结果章节：`local_result_sources` 非空，且 `provenance_status` 已写明
 
 If issues found: revise before output
 

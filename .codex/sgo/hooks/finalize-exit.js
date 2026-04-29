@@ -173,11 +173,9 @@ async function generateOutput(cwd) {
 
     let output = '';
     child.stdout.on('data', (data) => { output += data.toString(); });
-    child.stderr.on('data', (data) => { console.error('format error:', data.toString()); });
+    child.stderr.on('data', (data) => { process.stderr.write(`format error: ${data.toString()}`); });
 
     child.on('close', () => {
-      console.log('Output generation:', output.trim());
-
       // Extract generated file paths from output
       const filePaths = [];
       const pathRegex = /\.sgo\/output\/[^\n]+\.(txt|md|tex)/g;

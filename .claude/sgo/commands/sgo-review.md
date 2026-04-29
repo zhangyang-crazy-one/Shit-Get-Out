@@ -17,8 +17,8 @@ model: inherit
 
 ## 前置条件
 
-- `.sgo/STATE.md` 必须存在且 `当前阶段` 为 `writing` 或 `finalize`
-- `.sgo/chapters/` 下必须有已完成的章节文件
+- `.sgo/STATE.md` 必须存在且 `当前阶段` 为 `writing`、`review` 或 `finalize`
+- `.sgo/drafts/` 或 `.sgo/chapters/` 下必须有已完成的章节文件
 - `.sgo/constitution/constitution.md` 必须存在且状态为 `locked`
 
 ## 执行步骤
@@ -28,21 +28,23 @@ model: inherit
 1. 读取 `.sgo/STATE.md` — 当前状态、章节列表、终审状态
 2. 读取 `.sgo/constitution/constitution.md` — 创作宪法
 3. 读取 `.sgo/outline/outline.md` — 故事大纲
-4. 扫描 `.sgo/chapters/` 获取所有已完成章节
+4. 优先扫描 `.sgo/drafts/` 获取当前项目正文；若为空再回退到 `.sgo/chapters/`
 5. 读取 `.sgo/tracking/foreshadow-ledger.md` — 伏笔追踪
-6. 读取类型配置获取输出格式要求
+6. 读取 `.sgo/methodology/profile.resolved.json` 与 `constitution.genre_config_ref` 获取输出格式要求
+7. 如果 `genre=tech-paper` 且结果章节含表格/数值比较，检查 `.sgo/output/` 下是否存在结构化结果包
 
 ### 第二步：Spawn sgo-finalizer Agent 执行终审
 
-使用 `sgo-finalizer` Agent（model: opus，最强推理能力）执行 8 步审计：
+使用 `sgo-finalizer` Agent（model: opus，最强推理能力）执行终审审计，其中 tech-paper 额外包含结果来源检查：
 1. Constitution Iron Rules Audit — 铁律合规
 2. Character Consistency Audit — 角色一致性
 3. Worldview Consistency Audit — 世界观一致性
 4. Foreshadow Closure Audit — 伏笔闭环
 5. Perspective Consistency Audit — 视角一致性
 6. Quality Scoring — 质量评分
-7. Output Generation — 格式化成品输出
-8. Decision — PASS / FAIL / ABORT
+7. Result Provenance Audit（tech-paper）— 结果包 / local_result_sources / provenance_status
+8. Output Generation — 格式化成品输出
+9. Decision — PASS / FAIL / ABORT
 
 ### 第三步：处理终审结果
 
@@ -53,7 +55,8 @@ model: inherit
    - `finalization_status.decision: "PASS"`
    - `finalization_status.output_files: [生成的文件路径]`
 2. 格式化成品已输出到 `.sgo/output/`
-3. 提示用户使用 `/sgo-export` 导出成品
+3. 若为 tech-paper，结构化结果包也应保留在 `.sgo/output/`
+4. 提示用户使用 `/sgo-export` 导出成品
 
 **如果 decision = FAIL：**
 1. 更新 `.sgo/STATE.md`：
@@ -87,3 +90,4 @@ model: inherit
 - 终审视角与写作视角必须分离（独立上下文执行）
 - 修订回流最多 3 次（FINL-04）
 - STATE.md 更新必须先 Read 再 Write，保留已有字段值
+- 对 `tech-paper` 而言，外部引用完整并不等于结果 provenance 完整；表格或数值比较必须绑定本地结构化结果包

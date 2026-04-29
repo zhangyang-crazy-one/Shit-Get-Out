@@ -40,10 +40,18 @@ process.stdin.on('end', () => {
       timeout: 30000,
     });
 
-    if (result.stdout) {
-      process.stdout.write(normalizeOutput(event, result.stdout));
-    }
+    const parsed = parseHookPayload(result.stdout);
+    const normalized = normalizeOutput(event, parsed);
+    const handled = isHandledDecision(event, parsed);
+
+    if (normalized.stdout) process.stdout.write(normalized.stdout);
     if (result.stderr) process.stderr.write(result.stderr);
+
+    // Codex treats non-zero PostToolUse exits as hook failures. SGO hooks use
+    // exit code 2 to signal structured "block / revise / abort" decisions, so
+    // we translate those into protocol output and still exit 0.
+    if (handled) process.exit(0);
+
     process.exit(result.status || 0);
   } catch {
     process.exit(0);
@@ -82,40 +90,80 @@ function inferFilePath(command) {
   return '';
 }
 
-function normalizeOutput(event, stdout) {
-  try {
-    const data = JSON.parse(stdout);
-    if (event === 'SessionStart' && data.hookSpecificOutput?.additionalContext) {
-      return JSON.stringify({
+function normalizeOutput(event, data) {
+  if (!data) return { stdout: '', stderr: '' };
+
+  if (event === 'SessionStart' && data.hookSpecificOutput?.additionalContext) {
+    return {
+      stdout: JSON.stringify({
         hookSpecificOutput: {
           hookEventName: 'SessionStart',
           additionalContext: data.hookSpecificOutput.additionalContext,
         },
-      });
-    }
-    if (event === 'PreToolUse' && (data.decision === 'block' || data.decision === 'deny')) {
-      return JSON.stringify({
+      }),
+      stderr: '',
+    };
+  }
+  if (event === 'PreToolUse' && (data.decision === 'block' || data.decision === 'deny')) {
+    return {
+      stdout: JSON.stringify({
         hookSpecificOutput: {
           hookEventName: 'PreToolUse',
           permissionDecision: 'deny',
           permissionDecisionReason: data.reason || 'Blocked by SGO hook.',
         },
-      });
-    }
-    if (event === 'PostToolUse' && (data.decision === 'block' || data.decision === 'deny')) {
-      return JSON.stringify({
+      }),
+      stderr: '',
+    };
+  }
+  if (event === 'PostToolUse' && (data.decision === 'block' || data.decision === 'deny')) {
+    return {
+      stdout: JSON.stringify({
         continue: false,
         stopReason: data.reason || 'Blocked by SGO hook.',
         systemMessage: data.reason || 'Blocked by SGO hook.',
-      });
-    }
-    if (event === 'PostToolUse') {
-      const context = data.hookSpecificOutput?.additionalContext || data.reason;
-      return context ? JSON.stringify({ systemMessage: context }) : '';
-    }
-    if (event === 'PreToolUse') return '';
-    return stdout;
-  } catch {
-    return stdout;
+      }),
+      stderr: '',
+    };
   }
+  if (event === 'PostToolUse') {
+    const context = data.hookSpecificOutput?.additionalContext || data.reason;
+    return {
+      stdout: context ? JSON.stringify({ systemMessage: context }) : '',
+      stderr: '',
+    };
+  }
+  if (event === 'PreToolUse') return { stdout: '', stderr: '' };
+
+  return {
+    stdout: typeof data === 'string' ? data : JSON.stringify(data),
+    stderr: '',
+  };
+}
+
+function parseHookPayload(stdout) {
+  if (!stdout) return null;
+
+  const trimmed = stdout.trim();
+  if (!trimmed) return null;
+
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    const lines = trimmed.split('\n').map(line => line.trim()).filter(Boolean);
+    for (let i = lines.length - 1; i >= 0; i -= 1) {
+      try {
+        return JSON.parse(lines[i]);
+      } catch {
+        // ignore and continue scanning backwards
+      }
+    }
+    return trimmed;
+  }
+}
+
+function isHandledDecision(event, data) {
+  if (event !== 'PostToolUse' && event !== 'PreToolUse') return false;
+  if (!data || typeof data !== 'object') return false;
+  return ['allow', 'block', 'deny'].includes(data.decision);
 }

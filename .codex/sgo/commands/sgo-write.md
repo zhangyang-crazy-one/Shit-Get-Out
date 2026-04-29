@@ -58,6 +58,8 @@ Agent 将自动执行：
 - 情感弧线落地
 - 叙事冲突生成
 - 章节写作
+- frontmatter 中维护 `foreshadow_planted` / `foreshadow_collected` 与 `style_anchor_snippet`
+- 正文不得输出 `FS-*` 编号直呼、流程模板尾段或系统生成说明
 - 质量自检
 
 ### 第四步：更新项目状态

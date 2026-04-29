@@ -22,6 +22,8 @@ foreshadow_collected: []        # 本章回收的伏笔ID列表
 quality_score: null             # 质量评分（null = 未评分，0-100）
 constitution_compliant: null    # 宪法合规（null = 未检查，true/false）
 review_notes: ""                # 审校备注
+local_result_sources: []        # tech-paper 可选：本章使用的本地结果文件
+provenance_status: ""           # tech-paper 可选：none | versioned_result_bundle | raw_run_bundle
 
 # === 风格锚定 (D-02) ===
 style_locked: false              # 是否已锁定为风格样本（首章完成后设为 true）
