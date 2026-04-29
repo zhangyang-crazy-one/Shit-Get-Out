@@ -73,9 +73,9 @@ model: inherit
    - `阶段状态: completed`
    - `finalization_status.decision: "PASS"`
    - `finalization_status.output_files: [生成的文件路径]`
-2. 格式化成品已输出到 `.sgo/output/`
+2. 格式化成品先作为内部 staging 输出到 `.sgo/output/`
 3. 若为 tech-paper，结构化结果包也应保留在 `.sgo/output/`
-4. 提示用户使用 `$sgo-export` 导出成品
+4. 仅当项目进入 `当前阶段: done` 且 `阶段状态: completed|archived|final` 后，才提示用户使用 `$sgo-export` 发布正式成品
 
 **如果 decision = FAIL：**
 1. 更新 `.sgo/STATE.md`：

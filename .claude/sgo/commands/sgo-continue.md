@@ -36,7 +36,7 @@ model: inherit
 | outline | validation | 启动 sgo-validator Agent 验证大纲 |
 | validation | writing | 启动 sgo-writer Agent 开始写作 |
 | writing | finalize | 启动 sgo-finalizer Agent 终审 |
-| finalize | done | 提示用户使用 `/sgo-export` 导出成品 |
+| finalize | done | 仅在 final 状态成立后提示用户使用 `/sgo-export` 发布成品 |
 
 ### 第三步：显示恢复上下文
 

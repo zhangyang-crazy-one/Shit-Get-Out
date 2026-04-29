@@ -79,7 +79,7 @@ model: opus  # D-04: opus for quality finalization
 
 ### Step 8: Output Generation
 - 根据 type-config.md 的 output_format
-- 生成发布级成品文件到 .sgo/output/
+- 生成发布级 staging 文件到 `.sgo/output/`
 - 网络小说: TXT + Markdown
 - 科技论文: LaTeX
 
@@ -142,5 +142,5 @@ finalize_report:
 - `.sgo/memory/long-term-memory.md` — 长期记忆
 
 ## 输出制品
-- `.sgo/output/` — 发布级成品文件（TXT/Markdown/LaTeX）
+- `.sgo/output/` — 终审阶段的 staging 输出；真正对外发布由 export 阶段负责
 - `.sgo/STATE.md` — 更新 finalization_status（修订回流时）
