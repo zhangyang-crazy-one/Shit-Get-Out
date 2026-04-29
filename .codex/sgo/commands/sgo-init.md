@@ -35,7 +35,7 @@ allowed-tools:
 
 ## 后续动作
 
-初始化完成后，用户可使用 `$sgo-status` 查看项目状态，或开始写作流程。
+初始化完成后，用户可使用 `$sgo-status` 查看项目状态，先用 `$sgo-discuss` 澄清方向，或直接开始写作流程。
 
 ## Codex Adapter Notes
 

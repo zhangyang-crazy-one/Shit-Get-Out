@@ -369,6 +369,7 @@ def generate_command_references() -> None:
     for src in sorted((CLAUDE_SGO / "commands").glob("sgo-*.md")):
         body = adapt_text_for_codex(read_text(src))
         body = body.replace("读取 `.claude/settings.json`", "读取 `.codex/hooks.json`")
+        body = body.replace("node .claude/sgo/scripts/methodology-profile.js", "node .codex/sgo/scripts/methodology-profile.js")
         adapter_note = """\n\n## Codex Adapter Notes\n\n- Treat `$ARGUMENTS` / `$1` as the text after the `$sgo-*` skill invocation.\n- When this workflow says to spawn an SGO Agent, use Codex `spawn_agent(agent_type=\"sgo-...\")` if subagents are explicitly available in the current environment; otherwise execute the same agent instructions directly.\n- Keep all writing artifacts in `.sgo/`; `.codex/sgo/` only stores reusable framework files.\n"""
         write_text(commands_dir / src.name, body.rstrip() + adapter_note)
 

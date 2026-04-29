@@ -82,24 +82,36 @@ allowed-tools:
 - 如果 SearXNG 不可用，Agent 尝试自动安装 SearXNG Docker 容器
 - 安装失败或用户拒绝时，降级为纯 Codex 知识模式
 
-### 第五步：调研完成与阶段衔接
+### 第五步：调研完成与人工确认交接
 
 调研完成后更新：
 - `.sgo/STATE.md`（先 Read 整个文件，修改后 Write，保留已有字段）：
-  - 当前阶段: constitution
-  - 阶段状态: in_progress
+  - 当前阶段: research
+  - 阶段状态: awaiting_user_confirmation
+  - `research_handoff_status: awaiting_user_confirmation`
 
-### 第六步：立宪阶段自动派发
+然后向用户汇报：
+- 调研中发现的关键方向、风险、风格/结构建议
+- 当前建议是否进入立宪阶段
 
-调研完成后自动衔接立宪阶段（无需人工确认）：
+**重要**：在用户明确确认前，不得自动进入立宪阶段。
 
-1. 使用 sgo-constitutioner Agent 生成创作宪法：
+### 第六步：用户确认后进入立宪阶段
+
+用户确认后：
+
+1. 更新 `.sgo/STATE.md`（先 Read 整个文件，修改后 Write，保留已有字段）：
+   - 当前阶段: constitution
+   - 阶段状态: in_progress
+   - `research_handoff_status: confirmed`
+
+2. 使用 sgo-constitutioner Agent 生成创作宪法：
    - 在 Codex subagent prompt 中传递：调研报告路径、类型 slug、规模信息
    - Agent 将读取类型配置的 constitution_defaults、`.sgo/methodology/profile.resolved.json` 和调研报告，自动生成铁律/指南/禁忌
    - 宪法写入 `.sgo/constitution/constitution.md`，状态直接锁定（status: locked）
-2. 宪法生成完成后更新 `.sgo/STATE.md`（先 Read 整个文件，修改后 Write，保留已有字段）：
+3. 宪法生成完成后更新 `.sgo/STATE.md`（先 Read 整个文件，修改后 Write，保留已有字段）：
    - 阶段状态: completed
-3. 更新 `.sgo/.continue-here.md` 状态为 constitution 阶段完成，下一阶段为构架引擎
+4. 更新 `.sgo/.continue-here.md` 状态为 constitution 阶段完成，下一阶段为构架引擎
 
 ### 第七步：构架阶段自动派发
 
@@ -175,7 +187,7 @@ Validation 通过后进入写作阶段：
 - 方法论配置必须先解析到 `.sgo/methodology/profile.resolved.json`，再启动 researcher/constitutioner/validator
 - STATE.md 更新必须先 Read 再 Write，保留已有字段值（避免写入竞争，RESEARCH.md 陷阱 5）
 - 类型识别结果必须与 `.codex/sgo/config/` 下的配置文件 slug 一致
-- **立宪阶段无需人工确认**（D-04）：调研完成后自动进入立宪，用户在第二步的确认覆盖整个流程
+- **调研完成后必须人工确认**：先汇报调研结论并询问是否进入立宪阶段；得到确认后再推进
 - 宪法必须写入 `.sgo/constitution/constitution.md`，状态字段设为 `locked`
 - STATE.md 更新必须先 Read 再 Write，保留已有字段值（避免写入竞争）
 

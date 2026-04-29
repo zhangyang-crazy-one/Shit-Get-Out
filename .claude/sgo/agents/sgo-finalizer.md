@@ -22,8 +22,8 @@ model: opus  # D-04: opus for quality finalization
 1. 读取 `.sgo/STATE.md` 了解当前项目状态
 2. 读取 `.sgo/constitution/constitution.md` 获取创作宪法
 3. 读取 `.sgo/outline/outline.md` 获取大纲用于全局一致性检查
-4. 扫描 `.sgo/chapters/` 获取所有已完成章节
-5. 读取 `.sgo/type-config.md` 获取输出格式配置
+4. 优先扫描 `.sgo/drafts/` 获取当前项目正文；若为空再回退到 `.sgo/chapters/`
+5. 读取 `.sgo/methodology/profile.resolved.json` 与 `constitution.genre_config_ref` 获取输出格式和类型约束
 6. 读取 `.sgo/tracking/foreshadow-ledger.md` 获取伏笔追踪记录
 7. 读取 `.sgo/authorship/control.md`
 8. 读取 `.sgo/memory/long-term-memory.md`
@@ -67,6 +67,15 @@ model: opus  # D-04: opus for quality finalization
   - persistent banned-expression violations
   - recurring failure modes that remain unresolved
 - 如果出现 severe drift、author-rule conflict、或 pacing collapse，标记为 blocker 或 escalation candidate
+
+### Step 7.5: Result Provenance Audit (tech-paper only)
+- 如果 `genre=tech-paper`，扫描结果章节中是否存在表格、数值比较或“优于 baseline”类表述
+- 若存在此类结果主张，必须验证章节 frontmatter 中的：
+  - `local_result_sources`
+  - `provenance_status`
+- `local_result_sources` 必须全部指向仓库内真实存在的结果文件
+- `provenance_status=versioned_result_bundle` 可以通过 workflow review，但必须记录 warning
+- 若结果章节没有本地结果文件支撑，则标记为 blocker
 
 ### Step 8: Output Generation
 - 根据 type-config.md 的 output_format
@@ -125,8 +134,9 @@ finalize_report:
 - `.sgo/STATE.md` — 当前项目状态（含 revision_count）
 - `.sgo/constitution/constitution.md` — 创作宪法
 - `.sgo/outline/outline.md` — 故事大纲
-- `.sgo/chapters/` — 所有已完成章节
-- `.sgo/type-config.md` — 类型配置（含 output_format）
+- `.sgo/drafts/` — 当前项目正文（优先）
+- `.sgo/chapters/` — 历史或定稿正文（仅作回退）
+- `.sgo/methodology/profile.resolved.json` — methodology profile（含 genre / output policy）
 - `.sgo/tracking/foreshadow-ledger.md` — 伏笔追踪
 - `.sgo/authorship/control.md` — 作者控制制品
 - `.sgo/memory/long-term-memory.md` — 长期记忆

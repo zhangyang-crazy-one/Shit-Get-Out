@@ -19,14 +19,18 @@ process.stdin.on('end', () => {
     const toolName = (data.tool_name || '');
 
     // 第零层：非破坏性工具始终放行
-    if (['Read', 'Glob', 'Grep', 'Agent', 'LSP', 'ListMcpResourcesTool', 'ReadMcpResourceTool', 'Bash'].includes(toolName)) {
+    if (['Read', 'Glob', 'Grep', 'Agent', 'LSP', 'ListMcpResourcesTool', 'ReadMcpResourceTool'].includes(toolName)) {
       process.exit(0);
     }
 
     // 允许编辑前置条件文件本身（调研报告），以便补充/修正
     const toolInput = data.tool_input || {};
     const targetPath = toolInput.file_path || '';
-    if (targetPath && targetPath.includes('.sgo/research/')) {
+    if (targetPath && (
+      targetPath.includes('.sgo/research/') ||
+      targetPath.includes('.sgo/STATE.md') ||
+      targetPath.includes('.sgo/.continue-here.md')
+    )) {
       process.exit(0);
     }
 
@@ -64,6 +68,17 @@ process.stdin.on('end', () => {
       const output = {
         decision: "block",
         reason: "SGO constitution-entry: 调研报告内容不足，无法生成宪法。请先完成完整的调研。"
+      };
+      process.stdout.write(JSON.stringify(output));
+      process.exit(2);
+    }
+
+    const handoffMatch = stateContent.match(/^research_handoff_status:\s*(.+)$/m);
+    const handoffStatus = handoffMatch ? handoffMatch[1].trim() : '';
+    if (handoffStatus !== 'confirmed') {
+      const output = {
+        decision: "block",
+        reason: "SGO constitution-entry: 调研完成后尚未得到用户确认。请先汇报调研结果并询问是否进入立宪阶段；确认后，将 `research_handoff_status` 设为 `confirmed` 再继续。"
       };
       process.stdout.write(JSON.stringify(output));
       process.exit(2);
